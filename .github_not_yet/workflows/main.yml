@@ -1,0 +1,92 @@
+name: Linting, testing, coverage, and release
+
+on:
+  push:
+    branches:
+    - 'master'
+  pull_request:
+    types:
+    - opened
+    - reopened
+
+jobs:
+    test:
+        name: ${{ matrix.os.name }} ${{ matrix.python-version }}
+        runs-on: ${{ matrix.os.runs-on }}
+        strategy:
+            matrix:
+                python-version: [3.6, 3.7, 3.8, 3.9, '3.10', '3.11.0-alpha - 3.11.0']
+                os:
+                    -   name: Linux
+                        runs-on: ubuntu-latest
+                        python_platform: linux
+                    -   name: Windows
+                        runs-on: windows-latest
+                        python_platform: win32
+                    -   name: macOS
+                        runs-on: macos-latest
+                        python_platform: darwin
+        steps:
+            -   uses: actions/checkout@v2
+            -   name: Set up Python ${{ matrix.python-version }}
+                uses: actions/setup-python@v2
+                with:
+                    python-version: ${{ matrix.python-version }}
+                    architecture: x64
+            -   name: install_dependencies
+                run: |
+                    python -m pip install --upgrade pip
+                    python -m pip install --upgrade setuptools wheel
+                    # Ignore most of the dependencies on Python > 3.8
+                    python -c 'from sys import version_info;from functools import partial;from itertools import filterfalse;from operator import contains; version_info[:2] > (3,8) or exit(); rem_reqs=frozenset(("https://github.com/offscale/astor/archive/refs/heads/empty-annassign.zip", "black", "typing-extensions")); f=open("requirements.txt", "r+"); s="\n".join(filterfalse(partial(contains, rem_reqs), map(str.rstrip, f.readlines()))) + "\n"; f.seek(0); f.truncate(0); f.write(s); f.close()'
+                    pip install -r requirements.txt
+            -   name: Test with unittest
+                run: |
+                    python setup.py test
+
+            -   name: Lint with flake8
+                run: |
+                    pip install flake8
+                    flake8 . --count --select=$(printf '%s,' {A..Z}) --ignore='W503,E203' --show-source --max-complexity=13 --max-line-length=119 --statistics
+                if: matrix.python-version == '3.8' && matrix.os.name == 'Linux' && github.ref == 'refs/heads/master'
+            -   name: Check formatted with black
+                run: |
+                    pip install black
+                    python -m black . --check --extend-exclude 'cdd/tests/mocks/cstify.py'
+                if: matrix.python-version == '3.8' && matrix.os.name == 'Linux' && github.ref == 'refs/heads/master'
+            -   name: Doc coverage
+                run: |
+                    pip install interrogate codecov coverage
+                    interrogate -e 'cdd/tests/mocks/cstify.py' --generate-badge '.github/doccoverage.svg'
+                    sed -i 's/interrogate/doc coverage/g; s/data-doc c/data-doc-c/g' .github/doccoverage.svg
+                    # Setup git config
+                    email_author="$(git log -1 --pretty=format:'%an <%ce>')"
+                    author="${email_author% *}"
+                    email="${email_author#*<}"; email="${email::-1}"
+                    git config --global user.name "$author"
+                    git config --global user.email "$email"
+                    # Only commit and push if there's a change
+                    if git diff --name-only --diff-filter='M' | grep -qF '.github/doccoverage.svg'; then
+                        git add .github/doccoverage.svg
+                        git commit -m '[.github/doccoverage.svg] Updated coverage'
+                        git push origin master
+                    fi
+                if: matrix.python-version == '3.8' && matrix.os.name == 'Linux' && github.ref == 'refs/heads/master'
+            -   name: Test coverage
+                run: |
+                    coverage run -m unittest discover
+                    env
+                    bash <(curl --proto '=https' --tlsv1.2 -sSf https://codecov.io/bash)
+                env:
+                    CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+                if: matrix.python-version == '3.8' && matrix.os.name == 'Linux' && github.ref == 'refs/heads/master'
+            -   name: PyPi release
+                run: |
+                    pip install twine
+                    python setup.py sdist bdist_wheel
+                    python -m twine upload --repository pypi dist/*
+                env:
+                    TWINE_USERNAME: __token__
+                    TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+                    TWINE_NON_INTERACTIVE: 1
+                if: matrix.python-version == '3.8' && matrix.os.name == 'Linux' && github.ref == 'refs/heads/master'
