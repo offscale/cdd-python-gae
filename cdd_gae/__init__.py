@@ -15,4 +15,4 @@ __description__ = "Migration tooling from Google App Engine (webapp2, ndb) to py
 root_logger = get_logger()
 logging.getLogger("blib2to3").setLevel(logging.WARNING)
 
-__all__ = ["get_logger", "root_logger", "__version__"]
+__all__ = ["get_logger", "root_logger", "__description__", "__version__"]
