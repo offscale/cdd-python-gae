@@ -43,7 +43,7 @@ def _build_parser():
         help="ndb parser",
     )
     ndb_parser.add_argument(
-        "python_file", help="Python file to parse NDB `class`es out of", required=True
+        "python_file", help="Python file to parse NDB `class`es out of"
     )
     ndb_parser.add_argument(
         "--dry-run",
