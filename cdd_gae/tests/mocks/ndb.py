@@ -23,52 +23,79 @@ ndb_file_ir = {
     "doc": "",
     "name": "File",
     "params": OrderedDict(
-        [
+        (
             (
                 "updated",
                 {
+                    "doc": "",
                     "typ": "str",
                     "x_typ": {
-                        "auto_now": True,
-                        "indexed": False,
                         "internal_type": "ndb.DateTimeProperty",
+                        "sql": {
+                            "constraints": {"auto_now": True, "indexed": False},
+                            "type": "DateTime",
+                        },
                     },
                 },
             ),
             (
                 "used_at",
                 {
+                    "doc": "",
                     "typ": "str",
-                    "x_typ": {"indexed": True, "internal_type": "ndb.DateTimeProperty"},
+                    "x_typ": {
+                        "internal_type": "ndb.DateTimeProperty",
+                        "sql": {"constraints": {"indexed": True}, "type": "DateTime"},
+                    },
                 },
             ),
             (
                 "archived",
                 {
-                    "default": False,
+                    "doc": "",
                     "typ": "bool",
-                    "x_typ": {"indexed": True, "internal_type": "ndb.BooleanProperty"},
+                    "x_typ": {
+                        "internal_type": "ndb.BooleanProperty",
+                        "sql": {
+                            "constraints": {"default": False, "indexed": True},
+                            "type": "Boolean",
+                        },
+                    },
                 },
             ),
             (
                 "archived_at",
                 {
+                    "doc": "",
                     "typ": "str",
                     "x_typ": {
-                        "indexed": False,
                         "internal_type": "ndb.DateTimeProperty",
+                        "sql": {"constraints": {"indexed": False}, "type": "DateTime"},
                     },
                 },
             ),
             (
                 "path_source",
                 {
+                    "doc": "",
                     "typ": "str",
-                    "x_typ": {"indexed": True, "internal_type": "ndb.StringProperty"},
+                    "x_typ": {
+                        "sql": {"constraints": {"indexed": True}, "type": "String"}
+                    },
                 },
             ),
-            ("source", {"typ": "str", "x_typ": {"internal_type": "ndb.TextProperty"}}),
-        ]
+            (
+                "source",
+                {
+                    "doc": "",
+                    "typ": "str",
+                    "x_typ": {
+                        "internal_type": "ndb.TextProperty",
+                        "sql": {"type": "Text"},
+                    },
+                },
+            ),
+        )
     ),
     "returns": None,
     "type": "static",

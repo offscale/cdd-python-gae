@@ -27,29 +27,67 @@ ndb_type_map = {
     "UserProperty": "str",
 }
 
+ndb2sqlalchemy_types = {
+    "BlobKeyProperty": "str",
+    "BlobProperty": "str",
+    "BooleanProperty": "Boolean",
+    "ComputedProperty": "str",
+    "DateProperty": "Date",
+    "DateTimeProperty": "DateTime",
+    "FloatProperty": "Float",
+    "GenericProperty": "str",
+    "GeoPtProperty": "str",
+    "IndexProperty": "str",
+    "IntegerProperty": "Integer",
+    "JsonProperty": "JSON",
+    "KeyProperty": "str",
+    "LocalStructuredProperty": "str",
+    "PickleProperty": "PickleType",
+    "Property": "str",
+    "StringProperty": "String",
+    "StructuredProperty": "str",
+    "TextProperty": "Text",
+    "TimeProperty": "Time",
+    "UserProperty": "UserDefinedType",
+}
+
 
 def ndb_parse_assign(assign):
     """
-    Parse out the `ast.Assign` into an IR param
+    Parse out the `ast.Assign` into an IR param. This always makes an SQL column representation.
 
     :param assign: NDB assignment, like `prop = ndb.BooleanProperty()`
     :type assign: ```ast.Assign```
 
     :return: a dictionary of form
-        {'typ': str, 'doc': Optional[str], 'default': Any}
+        { 'typ': str, 'x_typ': {'sql': {'type': str, 'constraints': Dict}},
+          'doc': Optional[str], 'default': Any }
     :rtype: ```dict```
     """
     ir = {
+        "doc": "",
         "typ": ndb_type_map[assign.value.func.attr],
         "x_typ": {
-            keyword.arg: get_value(keyword.value) for keyword in assign.value.keywords
+            "sql": {
+                "constraints": {
+                    keyword.arg: get_value(keyword.value)
+                    for keyword in assign.value.keywords
+                }
+            }
+            if assign.value.keywords
+            else {}
         },
     }
     if "default" in ir["x_typ"]:
         ir["default"] = ir["x_typ"].pop("default")
     internal_type = ".".join((assign.value.func.value.id, assign.value.func.attr))
+    # import sqlalchemy.types
+    # pp({t for t in dir(sqlalchemy.types) if not t.isupper() and not "_" in t and not t.startswith("_")})
+
+    ir["x_typ"]["sql"]["type"] = ndb2sqlalchemy_types[assign.value.func.attr]
+
     if internal_type not in frozenset(
-        ("ndb.StringType", "ndb.IntegerProperty", "ndb.FloatProperty")
+        ("ndb.StringProperty", "ndb.IntegerProperty", "ndb.FloatProperty")
     ):
         ir["x_typ"]["internal_type"] = internal_type
     return ir
