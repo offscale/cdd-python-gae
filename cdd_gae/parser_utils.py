@@ -1,6 +1,9 @@
 """
 Utils for parser.py
 """
+
+import ast
+
 from cdd.ast_utils import get_value
 
 ndb_type_map = {
@@ -72,17 +75,16 @@ def ndb_parse_assign(assign):
                 "constraints": {
                     keyword.arg: get_value(keyword.value)
                     for keyword in assign.value.keywords
-                }
+                },
+                # "type": assign.value.func.attr
             }
             if assign.value.keywords
             else {}
         },
     }
-    if "default" in ir["x_typ"]:
-        ir["default"] = ir["x_typ"].pop("default")
+    if "default" in ir["x_typ"].get("sql", {}).get("constraints", ()):
+        ir["default"] = ir["x_typ"]["sql"]["constraints"].pop("default")
     internal_type = ".".join((assign.value.func.value.id, assign.value.func.attr))
-    # import sqlalchemy.types
-    # pp({t for t in dir(sqlalchemy.types) if not t.isupper() and not "_" in t and not t.startswith("_")})
 
     ir["x_typ"]["sql"]["type"] = ndb2sqlalchemy_types[assign.value.func.attr]
 

@@ -188,4 +188,70 @@ ndb_file_cls = ClassDef(
     decorator_list=[],
 )
 
-__all__ = ["ndb_file_cls", "ndb_file_cls_str", "ndb_file_ir"]
+ndb_file_sqlalchemy_cls = ClassDef(
+    name="File",
+    bases=[Name(id="Base", ctx=Load())],
+    keywords=[],
+    body=[
+        Assign(
+            targets=[Name(id="__tablename__", ctx=Store())], value=set_value("File")
+        ),
+        Assign(
+            targets=[Name(id="updated", ctx=Store())],
+            value=Call(
+                func=Name(id="Column", ctx=Load()),
+                args=[Name(id="String", ctx=Load())],
+                keywords=[
+                    keyword(arg="auto_now", value=set_value(True)),
+                    keyword(arg="indexed", value=set_value(False)),
+                ],
+            ),
+        ),
+        Assign(
+            targets=[Name(id="used_at", ctx=Store())],
+            value=Call(
+                func=Name(id="Column", ctx=Load()),
+                args=[Name(id="String", ctx=Load())],
+                keywords=[keyword(arg="indexed", value=set_value(True))],
+            ),
+        ),
+        Assign(
+            targets=[Name(id="archived", ctx=Store())],
+            value=Call(
+                func=Name(id="Column", ctx=Load()),
+                args=[Name(id="Boolean", ctx=Load())],
+                keywords=[
+                    keyword(arg="default", value=set_value(False)),
+                    keyword(arg="indexed", value=set_value(True)),
+                ],
+            ),
+        ),
+        Assign(
+            targets=[Name(id="archived_at", ctx=Store())],
+            value=Call(
+                func=Name(id="Column", ctx=Load()),
+                args=[Name(id="String", ctx=Load())],
+                keywords=[keyword(arg="indexed", value=set_value(False))],
+            ),
+        ),
+        Assign(
+            targets=[Name(id="path_source", ctx=Store())],
+            value=Call(
+                func=Name(id="Column", ctx=Load()),
+                args=[Name(id="String", ctx=Load())],
+                keywords=[keyword(arg="indexed", value=set_value(True))],
+            ),
+        ),
+        Assign(
+            targets=[Name(id="source", ctx=Store())],
+            value=Call(
+                func=Name(id="Column", ctx=Load()),
+                args=[Name(id="String", ctx=Load())],
+                keywords=[],
+            ),
+        ),
+    ],
+    decorator_list=[],
+)
+
+__all__ = ["ndb_file_cls", "ndb_file_cls_str", "ndb_file_ir", "ndb_file_sqlalchemy_cls"]

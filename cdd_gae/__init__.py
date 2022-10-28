@@ -8,7 +8,7 @@ import logging
 from logging import getLogger as get_logger
 
 __author__ = "Samuel Marks"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __description__ = "Migration tooling from Google App Engine (webapp2, ndb) to python-cdd supported (Flask, SQLalchemy)."
 
 

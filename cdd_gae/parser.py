@@ -55,18 +55,14 @@ def ndb_class_def(ndb_cls_def):
         "params": OrderedDict(
             (node.targets[0].id, ndb_parse_assign(node))
             for node in ndb_cls_def.body
-            if all(
-                (
-                    isinstance(node, Assign),
-                    isinstance(node.value, Call),
-                    isinstance(node.value.func, Attribute),
-                    node.value.func.value.id == "ndb",
-                )
-            )
+            if isinstance(node, Assign)
+            and isinstance(node.value, Call)
+            and isinstance(node.value.func, Attribute)
+            and node.value.func.value.id == "ndb"
         ),
         "returns": None,
         "type": "static",
     }
 
 
-__all__ = ["ndb"]
+__all__ = ["ndb", "ndb_class_def"]

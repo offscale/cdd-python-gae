@@ -1,12 +1,12 @@
 """
-Tests for docstring parsing
+Tests for NDB parsing
 """
 
 from ast import parse, dump
 from unittest import TestCase
 
 from cdd.ast_utils import cmp_ast
-from cdd.pure_utils import remove_whitespace_comments
+from cdd.pure_utils import remove_whitespace_comments, pp
 from cdd.source_transformer import to_code
 from cdd.tests.utils_for_tests import unittest_main
 
@@ -34,7 +34,10 @@ class TestNdbParse(TestCase):
         """
         Tests that mock IR matches what `ndb_class_def` creates
         """
+        # pp(ndb(ndb_file_cls_str))
         self.assertDictEqual(ndb_file_ir, ndb(ndb_file_cls_str))
+
+    maxDiff = None
 
 
 unittest_main()

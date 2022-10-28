@@ -3,13 +3,12 @@
 """
 `__main__` implementation, can be run directly or with `python -m cdd_gae`
 """
-
 from argparse import ArgumentParser
 from os import path
 
 from cdd_gae import __description__, __version__
 
-from cdd_gae.ndb_parse import parse_ndb
+from cdd_gae.ndb_parse_emit import ndb_parse_emit_file
 
 
 def _build_parser():
@@ -39,11 +38,20 @@ def _build_parser():
     # ndb #
     #########
     ndb_parser = subparsers.add_parser(
-        "ndb",
-        help="ndb parser",
+        "ndb2sqlalchemy",
+        help="Parse NDB emit SQLalchemy",
     )
     ndb_parser.add_argument(
-        "python_file", help="Python file to parse NDB `class`es out of"
+        "-i",
+        "--input-file",
+        help="Python file to parse NDB `class`es out of",
+        required=True,
+    )
+    ndb_parser.add_argument(
+        "-o",
+        "--output-file",
+        help="Empty file to generate SQLalchemy classes to",
+        required=True,
     )
     ndb_parser.add_argument(
         "--dry-run",
@@ -71,10 +79,15 @@ def main(cli_argv=None, return_args=False):
     args = _parser.parse_args(args=cli_argv)
     command = args.command
     args_dict = {k: v for k, v in vars(args).items() if k != "command"}
-    if command == "ndb":
-        require_file_existent(_parser, args_dict["python_file"], name="truth")
+    if command == "ndb2sqlalchemy":
+        require_file_existent(_parser, args_dict["input_file"], name="input-file")
 
-        return args if return_args else parse_ndb(**args_dict)
+        if return_args:
+            return args
+
+        return ndb_parse_emit_file(**args_dict)
+    else:
+        raise NotImplementedError(command)
 
 
 def require_file_existent(_parser, filename, name):
