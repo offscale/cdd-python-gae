@@ -2,11 +2,12 @@
 Module that holds a function that parses NDB then emits SQLalchemy
 """
 
-from ast import Module, ClassDef, parse
+from ast import Assign, Name, Store, List, Load, Module, ClassDef, parse
 from functools import partial
-from operator import itemgetter
+from operator import itemgetter, attrgetter
 
 from cdd import emit
+from cdd.ast_utils import set_value, maybe_type_comment
 from cdd.pure_utils import rpartial
 from cdd.source_transformer import to_code
 
@@ -34,26 +35,37 @@ def ndb_parse_emit_file(input_file, output_file, dry_run=False):
     with open(input_file, "rt") as f:
         src = f.read()
     mod = parse(src)
-    sqlalchemy_src = to_code(
-        Module(
-            body=list(
-                map(
-                    partial(emit.sqlalchemy, emit_repr=False),
-                    filter(
-                        itemgetter("params"),
-                        map(
-                            parser.ndb_class_def,
-                            filter(rpartial(isinstance, ClassDef), mod.body),
-                        ),
+    all_ = []
+    sqlalchemy_mod = Module(
+        body=list(
+            map(
+                partial(emit.sqlalchemy, emit_repr=False),
+                filter(
+                    itemgetter("params"),
+                    map(
+                        parser.ndb_class_def,
+                        filter(rpartial(isinstance, ClassDef), mod.body),
                     ),
-                )
-            ),
-            type_ignores=[],
-            stmt=None,
-        )
+                ),
+            )
+        ),
+        type_ignores=[],
+        stmt=None,
     )
+    all_ = Assign(
+        targets=[Name("__all__", Store())],
+        value=List(
+            ctx=Load(),
+            elts=list(map(set_value, map(attrgetter("name"), sqlalchemy_mod.body))),
+            expr=None,
+        ),
+        expr=None,
+        lineno=None,
+        **maybe_type_comment
+    )
+    sqlalchemy_mod.body.append(all_)
     with open(output_file, "wt") as f:
-        f.write(sqlalchemy_src)
+        f.write(to_code(sqlalchemy_mod))
 
 
 __all__ = ["ndb_parse_emit_file"]
