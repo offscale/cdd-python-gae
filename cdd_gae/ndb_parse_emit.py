@@ -35,7 +35,6 @@ def ndb_parse_emit_file(input_file, output_file, dry_run=False):
     with open(input_file, "rt") as f:
         src = f.read()
     mod = parse(src)
-    all_ = []
     sqlalchemy_mod = Module(
         body=list(
             map(
