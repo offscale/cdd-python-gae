@@ -2,7 +2,7 @@
 Tests for WebApp2 to FastAPI
 """
 
-from ast import parse
+from ast import Module, parse
 from functools import partial
 from unittest import TestCase
 
@@ -13,6 +13,7 @@ from cdd.tests.utils_for_tests import unittest_main
 
 from cdd_gae.tests.mocks.fastapi import hello_fastapi_str, hello_fastapi_mod
 from cdd_gae.tests.mocks.webapp2 import hello_webapp2_mod, hello_webapp2_str
+from cdd_gae.webapp2_to_fastapi import webapp2_to_fastapi
 
 
 class TestWebApp2toFastApi(TestCase):
@@ -38,13 +39,19 @@ class TestWebApp2toFastApi(TestCase):
         self.assertTrue(cmp_ast(hello_webapp2_mod, parse(hello_webapp2_str)))
         self.assertEqual(
             *map(
-                partial(str.replace, " ", "$$$"),
-                map(
-                    remove_whitespace_comments,
-                    (hello_webapp2_str, to_code(hello_webapp2_mod)),
-                ),
+                remove_whitespace_comments,
+                (hello_webapp2_str, to_code(hello_webapp2_mod)),
             )
         )
+
+    def test_empty_webapp2_to_fastapi(self) -> None:
+        """Null case"""
+        webapp2_mod = Module(body=[], type_ignores=[])
+        fastapi_mod = webapp2_to_fastapi(webapp2_mod)
+        self.assertTrue(cmp_ast(webapp2_mod, fastapi_mod))
+
+    def test_hello_webapp2_to_hello_fastapi(self) -> None:
+        """Test if hello_webapp2 turns into hello_fastapi"""
 
 
 unittest_main()
