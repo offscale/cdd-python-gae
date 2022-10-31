@@ -17,6 +17,17 @@ from ast import (
 
 from cdd.ast_utils import set_value
 
+hello_fastapi_str = """
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def read_root():
+    return "Hello, webapp2!"
+"""
+
 hello_fastapi_mod = Module(
     body=[
         Assign(
@@ -44,4 +55,4 @@ hello_fastapi_mod = Module(
 )
 
 
-__all__ = ["hello_fastapi_mod"]
+__all__ = ["hello_fastapi_mod", "hello_fastapi_str"]

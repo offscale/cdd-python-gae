@@ -21,6 +21,16 @@ from ast import (
 
 from cdd.ast_utils import set_value
 
+hello_webapp2_str = """
+class HelloWebapp2(webapp2.RequestHandler):
+    def get(self):
+        self.response.write('Hello, webapp2!')
+
+app = webapp2.WSGIApplication([
+    ('/', HelloWebapp2),
+], debug=True)
+"""
+
 hello_webapp2_mod = Module(
     body=[
         ClassDef(
@@ -94,4 +104,4 @@ hello_webapp2_mod = Module(
     type_ignores=[],
 )
 
-__all__ = ["hello_webapp2_mod"]
+__all__ = ["hello_webapp2_mod", "hello_webapp2_str"]
