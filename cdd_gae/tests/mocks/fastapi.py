@@ -15,11 +15,9 @@ from ast import (
     Store,
 )
 
-from cdd.ast_utils import set_value
+from cdd.ast_utils import set_value, maybe_type_comment
 
 hello_fastapi_str = """
-from fastapi import FastAPI
-
 app = FastAPI()
 
 
@@ -33,11 +31,18 @@ hello_fastapi_mod = Module(
         Assign(
             targets=[Name(id="app", ctx=Store())],
             value=Call(func=Name(id="FastAPI", ctx=Load()), args=[], keywords=[]),
+            **maybe_type_comment
         ),
         FunctionDef(
             name="read_root",
             args=arguments(
-                posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[]
+                posonlyargs=[],
+                args=[],
+                kwonlyargs=[],
+                kw_defaults=[],
+                defaults=[],
+                vararg=None,
+                kwarg=None,
             ),
             body=[Return(value=set_value("Hello, webapp2!"))],
             decorator_list=[
@@ -49,6 +54,8 @@ hello_fastapi_mod = Module(
                     keywords=[],
                 )
             ],
+            returns=None,
+            **maybe_type_comment
         ),
     ],
     type_ignores=[],

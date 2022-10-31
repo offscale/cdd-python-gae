@@ -19,7 +19,7 @@ from ast import (
     Call,
 )
 
-from cdd.ast_utils import set_value
+from cdd.ast_utils import set_value, maybe_type_comment
 
 hello_webapp2_str = """
 class HelloWebapp2(webapp2.RequestHandler):
@@ -48,10 +48,12 @@ hello_webapp2_mod = Module(
                     name="get",
                     args=arguments(
                         posonlyargs=[],
-                        args=[arg(arg="self")],
+                        args=[arg(arg="self", annotation=None, **maybe_type_comment)],
                         kwonlyargs=[],
                         kw_defaults=[],
+                        kwarg=None,
                         defaults=[],
+                        vararg=None,
                     ),
                     body=[
                         Expr(
@@ -71,6 +73,8 @@ hello_webapp2_mod = Module(
                         )
                     ],
                     decorator_list=[],
+                    returns=None,
+                    **maybe_type_comment,
                 )
             ],
             decorator_list=[],
@@ -99,6 +103,7 @@ hello_webapp2_mod = Module(
                 ],
                 keywords=[keyword(arg="debug", value=set_value(True))],
             ),
+            **maybe_type_comment,
         ),
     ],
     type_ignores=[],
