@@ -72,6 +72,7 @@ hello_webapp2_mod = Module(
                     ],
                     decorator_list=[],
                     returns=None,
+                    lineno=None,
                     **maybe_type_comment,
                 )
             ],
@@ -101,6 +102,8 @@ hello_webapp2_mod = Module(
                 ],
                 keywords=[keyword(arg="debug", value=set_value(True))],
             ),
+            expr=None,
+            lineno=None,
             **maybe_type_comment,
         ),
     ],

@@ -9,6 +9,7 @@ from os import path
 from cdd_gae import __description__, __version__
 
 from cdd_gae.ndb_parse_emit import ndb_parse_emit_file
+from cdd_gae.webapp2_to_fastapi import webapp2_to_fastapi_file
 
 
 def _build_parser():
@@ -34,9 +35,9 @@ def _build_parser():
 
     parse_emit_types = ("ndb",)
 
-    #########
+    #######
     # ndb #
-    #########
+    #######
     ndb_parser = subparsers.add_parser(
         "ndb2sqlalchemy",
         help="Parse NDB emit SQLalchemy",
@@ -51,6 +52,31 @@ def _build_parser():
         "-o",
         "--output-file",
         help="Empty file to generate SQLalchemy classes to",
+        required=True,
+    )
+    ndb_parser.add_argument(
+        "--dry-run",
+        help="Show what would be created; don't actually write to the filesystem.",
+        action="store_true",
+    )
+
+    ######################
+    # webapp2_to_fastapi #
+    ######################
+    ndb_parser = subparsers.add_parser(
+        "webapp2_to_fastapi",
+        help="Parse WebApp2 emit FastAPI",
+    )
+    ndb_parser.add_argument(
+        "-i",
+        "--input-file",
+        help="Python file to parse WebApp2 `class`es out of",
+        required=True,
+    )
+    ndb_parser.add_argument(
+        "-o",
+        "--output-file",
+        help="Empty file to generate FastAPI functions to",
         required=True,
     )
     ndb_parser.add_argument(
@@ -79,13 +105,17 @@ def main(cli_argv=None, return_args=False):
     args = _parser.parse_args(args=cli_argv)
     command = args.command
     args_dict = {k: v for k, v in vars(args).items() if k != "command"}
-    if command == "ndb2sqlalchemy":
+    if command in frozenset(("ndb2sqlalchemy", "webapp2_to_fastapi")):
         require_file_existent(_parser, args_dict["input_file"], name="input-file")
 
         if return_args:
             return args
 
-        return ndb_parse_emit_file(**args_dict)
+        return (
+            webapp2_to_fastapi_file
+            if command == "webapp2_to_fastapi"
+            else ndb_parse_emit_file
+        )(**args_dict)
     else:
         raise NotImplementedError(command)
 

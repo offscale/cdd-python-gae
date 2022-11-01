@@ -11,7 +11,7 @@ cdd-python-gae
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort)
 [![PyPi: release](https://img.shields.io/pypi/v/python-cdd-gae.svg?maxAge=3600)](https://pypi.org/project/python-cdd-gae)
 
-Migration tooling from Google App Engine (webapp2, ndb) to python-cdd supported (Flask, SQLalchemy).
+Migration tooling from Google App Engine (webapp2, ndb) to python-cdd supported (FastAPI, SQLalchemy).
 
 Public SDK works with filenames, source code, and even in memory constructs (e.g., as imported into your REPL).
 CLI available also.
@@ -72,20 +72,22 @@ Traverse the AST for ndb and webapp2.
 
     $ python -m cdd_gae --help
     
-    usage: python -m cdd_gae [-h] [--version] {ndb2sqlalchemy} ...
+    usage: python -m cdd_gae [-h] [--version]
+                             {ndb2sqlalchemy,webapp2_to_fastapi} ...
     
     Migration tooling from Google App Engine (webapp2, ndb) to python-cdd
-    supported (Flask, SQLalchemy).
+    supported (FastAPI, SQLalchemy).
     
     positional arguments:
-      {ndb2sqlalchemy}
-        ndb2sqlalchemy  Parse NDB emit SQLalchemy
+      {ndb2sqlalchemy,webapp2_to_fastapi}
+        ndb2sqlalchemy      Parse NDB emit SQLalchemy
+        webapp2_to_fastapi  Parse WebApp2 emit FastAPI
     
-    options:
-      -h, --help        show this help message and exit
-      --version         show program's version number and exit
+    optional arguments:
+      -h, --help            show this help message and exit
+      --version             show program's version number and exit
 
-### `ndb2sqlalchemy`
+### `ndb2sqlalchemy` (`webapp2_to_fastapi` takes same args)
 
     $ python -m cdd_gae ndb2sqlalchemy --help
     

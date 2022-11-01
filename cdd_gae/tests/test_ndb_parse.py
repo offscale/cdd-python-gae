@@ -27,7 +27,8 @@ class TestNdbParse(TestCase):
             cmp_ast(ndb_file_cls, dump(parse(ndb_file_cls_str).body[0])), 0
         )
         self.assertEqual(
-            remove_whitespace_comments(ndb_file_cls_str), to_code(ndb_file_cls)
+            remove_whitespace_comments(ndb_file_cls_str),
+            to_code(ndb_file_cls).rstrip("\n"),
         )
 
     def test_ndb_class_def_to_ir(self) -> None:

@@ -31,6 +31,8 @@ hello_fastapi_mod = Module(
         Assign(
             targets=[Name(id="app", ctx=Store())],
             value=Call(func=Name(id="FastAPI", ctx=Load()), args=[], keywords=[]),
+            expr=None,
+            lineno=None,
             **maybe_type_comment
         ),
         FunctionDef(
@@ -55,6 +57,7 @@ hello_fastapi_mod = Module(
                 )
             ],
             returns=None,
+            lineno=None,
             **maybe_type_comment
         ),
     ],

@@ -4,7 +4,7 @@ Mocks for NDB
 from ast import ClassDef, Name, Assign, Load, Store, keyword, Call, Attribute
 from collections import OrderedDict
 
-from cdd.ast_utils import set_value
+from cdd.ast_utils import set_value, maybe_type_comment
 
 ndb_file_cls_str = """
 class File(FileBase):
@@ -120,7 +120,9 @@ ndb_file_cls = ClassDef(
                     keyword(arg="indexed", value=set_value(False)),
                 ],
             ),
+            expr=None,
             lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="used_at", ctx=Store())],
@@ -133,7 +135,9 @@ ndb_file_cls = ClassDef(
                 args=[],
                 keywords=[keyword(arg="indexed", value=set_value(True))],
             ),
+            expr=None,
             lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="archived", ctx=Store())],
@@ -147,7 +151,9 @@ ndb_file_cls = ClassDef(
                     keyword(arg="indexed", value=set_value(True)),
                 ],
             ),
+            expr=None,
             lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="archived_at", ctx=Store())],
@@ -160,7 +166,9 @@ ndb_file_cls = ClassDef(
                 args=[],
                 keywords=[keyword(arg="indexed", value=set_value(False))],
             ),
+            expr=None,
             lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="path_source", ctx=Store())],
@@ -171,7 +179,9 @@ ndb_file_cls = ClassDef(
                 args=[],
                 keywords=[keyword(arg="indexed", value=set_value(True))],
             ),
+            expr=None,
             lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="source", ctx=Store())],
@@ -182,7 +192,9 @@ ndb_file_cls = ClassDef(
                 args=[],
                 keywords=[],
             ),
+            expr=None,
             lineno=None,
+            **maybe_type_comment
         ),
     ],
     decorator_list=[],
@@ -194,7 +206,11 @@ ndb_file_sqlalchemy_cls = ClassDef(
     keywords=[],
     body=[
         Assign(
-            targets=[Name(id="__tablename__", ctx=Store())], value=set_value("File")
+            targets=[Name(id="__tablename__", ctx=Store())],
+            value=set_value("File"),
+            expr=None,
+            lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="updated", ctx=Store())],
@@ -206,6 +222,9 @@ ndb_file_sqlalchemy_cls = ClassDef(
                     keyword(arg="indexed", value=set_value(False)),
                 ],
             ),
+            expr=None,
+            lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="used_at", ctx=Store())],
@@ -214,6 +233,9 @@ ndb_file_sqlalchemy_cls = ClassDef(
                 args=[Name(id="String", ctx=Load())],
                 keywords=[keyword(arg="indexed", value=set_value(True))],
             ),
+            expr=None,
+            lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="archived", ctx=Store())],
@@ -225,6 +247,9 @@ ndb_file_sqlalchemy_cls = ClassDef(
                     keyword(arg="indexed", value=set_value(True)),
                 ],
             ),
+            expr=None,
+            lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="archived_at", ctx=Store())],
@@ -233,6 +258,9 @@ ndb_file_sqlalchemy_cls = ClassDef(
                 args=[Name(id="String", ctx=Load())],
                 keywords=[keyword(arg="indexed", value=set_value(False))],
             ),
+            expr=None,
+            lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="path_source", ctx=Store())],
@@ -241,6 +269,9 @@ ndb_file_sqlalchemy_cls = ClassDef(
                 args=[Name(id="String", ctx=Load())],
                 keywords=[keyword(arg="indexed", value=set_value(True))],
             ),
+            expr=None,
+            lineno=None,
+            **maybe_type_comment
         ),
         Assign(
             targets=[Name(id="source", ctx=Store())],
@@ -249,6 +280,9 @@ ndb_file_sqlalchemy_cls = ClassDef(
                 args=[Name(id="String", ctx=Load())],
                 keywords=[],
             ),
+            expr=None,
+            lineno=None,
+            **maybe_type_comment
         ),
     ],
     decorator_list=[],

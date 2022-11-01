@@ -3,6 +3,7 @@ Tests for WebApp2 to FastAPI
 """
 
 from ast import Module, parse
+from copy import deepcopy
 from functools import partial
 from unittest import TestCase
 
@@ -52,6 +53,10 @@ class TestWebApp2toFastApi(TestCase):
 
     def test_hello_webapp2_to_hello_fastapi(self) -> None:
         """Test if hello_webapp2 turns into hello_fastapi"""
+        fastapi_mod = webapp2_to_fastapi(deepcopy(hello_webapp2_mod))
+        hello_fastapi_renamed_func_mod = deepcopy(hello_fastapi_mod)
+        hello_fastapi_renamed_func_mod.body[1].name = "HelloWebapp2_get"
+        self.assertTrue(cmp_ast(hello_fastapi_renamed_func_mod, fastapi_mod))
 
 
 unittest_main()
