@@ -7,7 +7,6 @@ from argparse import ArgumentParser
 from os import path
 
 from cdd_gae import __description__, __version__
-
 from cdd_gae.ndb_parse_emit import ndb_parse_emit_file
 from cdd_gae.webapp2_to_fastapi import webapp2_to_fastapi_file
 
@@ -32,8 +31,6 @@ def _build_parser():
     subparsers = parser.add_subparsers()
     subparsers.required = True
     subparsers.dest = "command"
-
-    parse_emit_types = ("ndb",)
 
     #######
     # ndb #

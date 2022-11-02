@@ -2,11 +2,11 @@
 Tests for NDB parsing
 """
 
-from ast import parse, dump
+from ast import dump, parse
 from unittest import TestCase
 
 from cdd.ast_utils import cmp_ast
-from cdd.pure_utils import remove_whitespace_comments, pp
+from cdd.pure_utils import remove_whitespace_comments
 from cdd.source_transformer import to_code
 from cdd.tests.utils_for_tests import unittest_main
 

@@ -2,24 +2,24 @@
 Mocks for webapp2
 """
 from ast import (
-    List,
-    Tuple,
-    keyword,
-    Store,
-    Name,
     Assign,
-    Module,
-    ClassDef,
-    Load,
     Attribute,
-    FunctionDef,
-    arguments,
-    arg,
-    Expr,
     Call,
+    ClassDef,
+    Expr,
+    FunctionDef,
+    List,
+    Load,
+    Module,
+    Name,
+    Store,
+    Tuple,
+    arg,
+    arguments,
+    keyword,
 )
 
-from cdd.ast_utils import set_value, maybe_type_comment
+from cdd.ast_utils import maybe_type_comment, set_value
 
 hello_webapp2_str = """
 class HelloWebapp2(webapp2.RequestHandler):

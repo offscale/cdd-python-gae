@@ -3,18 +3,17 @@ Utility functions for webapp2_to_fastapi.py
 """
 
 from ast import (
-    Return,
-    Expr,
+    Attribute,
     Call,
     FunctionDef,
-    arguments,
     Load,
     Name,
-    Attribute,
     NodeTransformer,
+    Return,
+    arguments,
 )
 
-from cdd.ast_utils import set_value, maybe_type_comment
+from cdd.ast_utils import maybe_type_comment, set_value
 
 
 def generate_route(func, uri, cls_name):

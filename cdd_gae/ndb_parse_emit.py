@@ -2,12 +2,12 @@
 Module that holds a function that parses NDB then emits SQLalchemy
 """
 
-from ast import Assign, Name, Store, List, Load, Module, ClassDef, parse
+from ast import Assign, ClassDef, List, Load, Module, Name, Store, parse
 from functools import partial
-from operator import itemgetter, attrgetter
+from operator import attrgetter, itemgetter
 
 from cdd import emit
-from cdd.ast_utils import set_value, maybe_type_comment
+from cdd.ast_utils import maybe_type_comment, set_value
 from cdd.pure_utils import rpartial
 from cdd.source_transformer import to_code
 

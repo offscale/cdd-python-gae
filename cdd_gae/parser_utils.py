@@ -2,7 +2,6 @@
 Utils for parser.py
 """
 
-import ast
 
 from cdd.ast_utils import get_value
 

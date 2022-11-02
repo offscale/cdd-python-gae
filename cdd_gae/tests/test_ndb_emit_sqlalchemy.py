@@ -1,13 +1,10 @@
 """
 Tests that NDB parses and then emits SQLalchemy
 """
-import ast
-from ast import parse, dump
 from unittest import TestCase
 
 from cdd import emit
 from cdd.ast_utils import cmp_ast
-from cdd.source_transformer import to_code
 from cdd.tests.utils_for_tests import unittest_main
 
 from cdd_gae.tests.mocks.ndb import ndb_file_ir, ndb_file_sqlalchemy_cls

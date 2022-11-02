@@ -5,16 +5,16 @@
 from ast import (
     Assign,
     Attribute,
-    Name,
     Call,
-    Tuple,
-    Load,
-    FunctionDef,
-    Store,
     ClassDef,
+    FunctionDef,
+    Load,
+    Module,
+    Name,
+    Store,
+    Tuple,
     parse,
 )
-from ast import Module
 from collections import OrderedDict
 from functools import partial
 from itertools import chain

@@ -1,10 +1,10 @@
 """
 Mocks for NDB
 """
-from ast import ClassDef, Name, Assign, Load, Store, keyword, Call, Attribute
+from ast import Assign, Attribute, Call, ClassDef, Load, Name, Store, keyword
 from collections import OrderedDict
 
-from cdd.ast_utils import set_value, maybe_type_comment
+from cdd.ast_utils import maybe_type_comment, set_value
 
 ndb_file_cls_str = """
 class File(FileBase):

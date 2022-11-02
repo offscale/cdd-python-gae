@@ -3,19 +3,19 @@ FastAPI mocks that match those in webapp2.py
 """
 
 from ast import (
-    FunctionDef,
-    arguments,
-    Return,
-    Name,
+    Assign,
     Attribute,
     Call,
+    FunctionDef,
     Load,
-    Assign,
     Module,
+    Name,
+    Return,
     Store,
+    arguments,
 )
 
-from cdd.ast_utils import set_value, maybe_type_comment
+from cdd.ast_utils import maybe_type_comment, set_value
 
 hello_fastapi_str = """
 app = FastAPI()

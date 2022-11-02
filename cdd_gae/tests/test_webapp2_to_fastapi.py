@@ -12,7 +12,7 @@ from cdd.pure_utils import remove_whitespace_comments
 from cdd.source_transformer import to_code
 from cdd.tests.utils_for_tests import unittest_main
 
-from cdd_gae.tests.mocks.fastapi import hello_fastapi_str, hello_fastapi_mod
+from cdd_gae.tests.mocks.fastapi import hello_fastapi_mod, hello_fastapi_str
 from cdd_gae.tests.mocks.webapp2 import hello_webapp2_mod, hello_webapp2_str
 from cdd_gae.webapp2_to_fastapi import webapp2_to_fastapi
 
