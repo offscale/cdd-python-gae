@@ -8,11 +8,14 @@ from ast import (
     Call,
     ClassDef,
     FunctionDef,
+    ImportFrom,
+    List,
     Load,
     Module,
     Name,
     Store,
     Tuple,
+    alias,
     parse,
 )
 from collections import OrderedDict
@@ -20,7 +23,7 @@ from functools import partial
 from itertools import chain
 from operator import attrgetter, itemgetter
 
-from cdd.ast_utils import get_value, maybe_type_comment
+from cdd.ast_utils import get_value, maybe_type_comment, set_value
 from cdd.pure_utils import rpartial
 from cdd.source_transformer import to_code
 
@@ -48,10 +51,33 @@ def webapp2_to_fastapi_file(input_file, output_file, dry_run=False):
     with open(input_file, "rt") as f:
         src = f.read()
 
-    output_contents = to_code(webapp2_to_fastapi(parse(src)))
+    fastapi_mod = webapp2_to_fastapi(parse(src))
+
+    fastapi_mod.body.insert(
+        0,
+        ImportFrom(
+            level=0,
+            module="fastapi",
+            names=[alias(asname=None, name="FastAPI")],
+            lineno=None,
+        ),
+    )
+    fastapi_mod.body.append(
+        Assign(
+            targets=[Name("__all__", Store())],
+            value=List(
+                ctx=Load(),
+                elts=[set_value("app")],
+                expr=None,
+            ),
+            expr=None,
+            lineno=None,
+            **maybe_type_comment,
+        )
+    )
 
     with open(output_file, "wt") as f:
-        f.write(output_contents)
+        f.write(to_code(fastapi_mod))
 
 
 def webapp2_to_fastapi(mod):
