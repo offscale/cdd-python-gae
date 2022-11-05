@@ -52,14 +52,12 @@ ndb_file_ir = {
             (
                 "archived",
                 {
+                    "default": False,
                     "doc": "",
                     "typ": "bool",
                     "x_typ": {
                         "internal_type": "ndb.BooleanProperty",
-                        "sql": {
-                            "constraints": {"default": False, "indexed": True},
-                            "type": "Boolean",
-                        },
+                        "sql": {"constraints": {"indexed": True}, "type": "Boolean"},
                     },
                 },
             ),
@@ -201,91 +199,78 @@ ndb_file_cls = ClassDef(
 )
 
 ndb_file_sqlalchemy_cls = ClassDef(
-    name="File",
-    bases=[Name(id="Base", ctx=Load())],
-    keywords=[],
+    bases=[Name(ctx=Load(), id="Base")],
     body=[
         Assign(
-            targets=[Name(id="__tablename__", ctx=Store())],
+            targets=[Name(ctx=Store(), id="__tablename__")],
             value=set_value("File"),
-            expr=None,
-            lineno=None,
             **maybe_type_comment
         ),
         Assign(
-            targets=[Name(id="updated", ctx=Store())],
+            targets=[Name(ctx=Store(), id="updated")],
             value=Call(
-                func=Name(id="Column", ctx=Load()),
-                args=[Name(id="String", ctx=Load())],
+                args=[Name(ctx=Load(), id="DateTime")],
+                func=Name(ctx=Load(), id="Column"),
                 keywords=[
                     keyword(arg="auto_now", value=set_value(True)),
                     keyword(arg="indexed", value=set_value(False)),
                 ],
             ),
-            expr=None,
-            lineno=None,
             **maybe_type_comment
         ),
         Assign(
-            targets=[Name(id="used_at", ctx=Store())],
+            targets=[Name(ctx=Store(), id="used_at")],
             value=Call(
-                func=Name(id="Column", ctx=Load()),
-                args=[Name(id="String", ctx=Load())],
+                args=[Name(ctx=Load(), id="DateTime")],
+                func=Name(ctx=Load(), id="Column"),
                 keywords=[keyword(arg="indexed", value=set_value(True))],
             ),
-            expr=None,
-            lineno=None,
             **maybe_type_comment
         ),
         Assign(
-            targets=[Name(id="archived", ctx=Store())],
+            targets=[Name(ctx=Store(), id="archived")],
             value=Call(
-                func=Name(id="Column", ctx=Load()),
-                args=[Name(id="Boolean", ctx=Load())],
+                args=[Name(ctx=Load(), id="Boolean")],
+                func=Name(ctx=Load(), id="Column"),
                 keywords=[
-                    keyword(arg="default", value=set_value(False)),
                     keyword(arg="indexed", value=set_value(True)),
+                    keyword(arg="default", value=set_value(False)),
+                    keyword(arg="nullable", value=set_value(False)),
                 ],
             ),
-            expr=None,
-            lineno=None,
             **maybe_type_comment
         ),
         Assign(
-            targets=[Name(id="archived_at", ctx=Store())],
+            targets=[Name(ctx=Store(), id="archived_at")],
             value=Call(
-                func=Name(id="Column", ctx=Load()),
-                args=[Name(id="String", ctx=Load())],
+                args=[Name(ctx=Load(), id="DateTime")],
+                func=Name(ctx=Load(), id="Column"),
                 keywords=[keyword(arg="indexed", value=set_value(False))],
             ),
-            expr=None,
-            lineno=None,
             **maybe_type_comment
         ),
         Assign(
-            targets=[Name(id="path_source", ctx=Store())],
+            targets=[Name(ctx=Store(), id="path_source")],
             value=Call(
-                func=Name(id="Column", ctx=Load()),
-                args=[Name(id="String", ctx=Load())],
+                args=[Name(ctx=Load(), id="String")],
+                func=Name(ctx=Load(), id="Column"),
                 keywords=[keyword(arg="indexed", value=set_value(True))],
             ),
-            expr=None,
-            lineno=None,
             **maybe_type_comment
         ),
         Assign(
-            targets=[Name(id="source", ctx=Store())],
+            targets=[Name(ctx=Store(), id="source")],
             value=Call(
-                func=Name(id="Column", ctx=Load()),
-                args=[Name(id="String", ctx=Load())],
+                args=[Name(ctx=Load(), id="Text")],
+                func=Name(ctx=Load(), id="Column"),
                 keywords=[],
             ),
-            expr=None,
-            lineno=None,
             **maybe_type_comment
         ),
     ],
     decorator_list=[],
+    keywords=[],
+    name="File",
 )
 
 __all__ = ["ndb_file_cls", "ndb_file_cls_str", "ndb_file_ir", "ndb_file_sqlalchemy_cls"]

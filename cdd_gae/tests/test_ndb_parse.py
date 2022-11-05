@@ -35,10 +35,7 @@ class TestNdbParse(TestCase):
         """
         Tests that mock IR matches what `ndb_class_def` creates
         """
-        # pp(ndb(ndb_file_cls_str))
         self.assertDictEqual(ndb_file_ir, ndb(ndb_file_cls_str))
-
-    maxDiff = None
 
 
 unittest_main()
