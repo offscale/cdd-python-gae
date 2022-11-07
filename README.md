@@ -83,7 +83,7 @@ Traverse the AST for ndb and webapp2.
         ndb2sqlalchemy      Parse NDB emit SQLalchemy
         webapp2_to_fastapi  Parse WebApp2 emit FastAPI
     
-    optional arguments:
+    options:
       -h, --help            show this help message and exit
       --version             show program's version number and exit
 
@@ -100,6 +100,22 @@ Traverse the AST for ndb and webapp2.
                             Python file to parse NDB `class`es out of
       -o OUTPUT_FILE, --output-file OUTPUT_FILE
                             Empty file to generate SQLalchemy classes to
+      --dry-run             Show what would be created; don't actually write to
+                            the filesystem.
+
+### `webapp2_to_fastapi`
+
+    $ python -m cdd_gae webapp2_to_fastapi --help
+    
+    usage: python -m cdd_gae webapp2_to_fastapi [-h] -i INPUT_FILE -o OUTPUT_FILE
+                                                [--dry-run]
+    
+    options:
+      -h, --help            show this help message and exit
+      -i INPUT_FILE, --input-file INPUT_FILE
+                            Python file to parse WebApp2 `class`es out of
+      -o OUTPUT_FILE, --output-file OUTPUT_FILE
+                            Empty file to generate FastAPI functions to
       --dry-run             Show what would be created; don't actually write to
                             the filesystem.
 
