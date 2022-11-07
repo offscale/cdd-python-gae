@@ -14,7 +14,7 @@ from os.path import extsep
 
 from setuptools import find_packages, setup
 
-package_name = "cdd_gae"
+package_name = "cdd-gae"
 
 with open(
     path.join(path.dirname(__file__), "README{extsep}md".format(extsep=extsep)),
