@@ -13,6 +13,8 @@ from cdd.__main__ import _build_parser
 from cdd.pure_utils import PY3_8
 from cdd.tests.utils_for_tests import run_cli_test, unittest_main
 
+from cdd_gae.__main__ import main
+
 
 class TestCli(TestCase):
     """Test class for __main__.py"""
@@ -58,6 +60,23 @@ class TestCli(TestCase):
                 ]
             ),
             "command",
+        )
+
+    def test_version_args(self):
+        """Tests that NotImplemented is raised"""
+        self.assertDictEqual(
+            {
+                "command": "ndb2sqlalchemy",
+                "input_file": __file__,
+                "output_file": "nonexistent.py",
+                "dry_run": False,
+            },
+            vars(
+                main(
+                    cli_argv=["ndb2sqlalchemy", "-i", __file__, "-o", "nonexistent.py"],
+                    return_args=True,
+                )
+            ),
         )
 
 

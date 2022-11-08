@@ -103,7 +103,7 @@ Traverse the AST for ndb and webapp2.
       --dry-run             Show what would be created; don't actually write to
                             the filesystem.
 
-### `webapp2_to_fastapi`
+### `webapp2_to_fastapi` (`ndb2sqlalchemy` takes same args)
 
     $ python -m cdd_gae webapp2_to_fastapi --help
     

@@ -5,7 +5,9 @@ Tests for WebApp2 to FastAPI
 from ast import Module, parse
 from copy import deepcopy
 from functools import partial
+from io import StringIO
 from unittest import TestCase
+from unittest.mock import patch
 
 from cdd.ast_utils import cmp_ast
 from cdd.pure_utils import remove_whitespace_comments
@@ -14,7 +16,7 @@ from cdd.tests.utils_for_tests import unittest_main
 
 from cdd_gae.tests.mocks.fastapi import hello_fastapi_mod, hello_fastapi_str
 from cdd_gae.tests.mocks.webapp2 import hello_webapp2_mod, hello_webapp2_str
-from cdd_gae.webapp2_to_fastapi import webapp2_to_fastapi
+from cdd_gae.webapp2_to_fastapi import webapp2_to_fastapi, webapp2_to_fastapi_file
 
 
 class TestWebApp2toFastApi(TestCase):
@@ -57,6 +59,13 @@ class TestWebApp2toFastApi(TestCase):
         hello_fastapi_renamed_func_mod = deepcopy(hello_fastapi_mod)
         hello_fastapi_renamed_func_mod.body[1].name = "HelloWebapp2_get"
         self.assertTrue(cmp_ast(hello_fastapi_renamed_func_mod, fastapi_mod))
+
+    def test_webapp2_to_fastapi_file_dry_run(self) -> None:
+        """Test that webapp2_to_fastapi_file works with --dry-run"""
+        with patch("sys.stdout", new_callable=StringIO) as sio:
+            webapp2_to_fastapi_file("foo", "bar", dry_run=True)
+        sio.seek(0)
+        self.assertEqual("[webapp2_to_fastapi_file] Dry running\n", sio.read())
 
 
 unittest_main()

@@ -100,21 +100,20 @@ def main(cli_argv=None, return_args=False):
     """
     _parser = _build_parser()
     args = _parser.parse_args(args=cli_argv)
+
+    if return_args:
+        return args
+
     command = args.command
     args_dict = {k: v for k, v in vars(args).items() if k != "command"}
-    if command in frozenset(("ndb2sqlalchemy", "webapp2_to_fastapi")):
-        require_file_existent(_parser, args_dict["input_file"], name="input-file")
+    assert command in frozenset(("ndb2sqlalchemy", "webapp2_to_fastapi"))
+    require_file_existent(_parser, args_dict["input_file"], name="input-file")
 
-        if return_args:
-            return args
-
-        return (
-            webapp2_to_fastapi_file
-            if command == "webapp2_to_fastapi"
-            else ndb_parse_emit_file
-        )(**args_dict)
-    else:
-        raise NotImplementedError(command)
+    return (
+        webapp2_to_fastapi_file
+        if command == "webapp2_to_fastapi"
+        else ndb_parse_emit_file
+    )(**args_dict)
 
 
 def require_file_existent(_parser, filename, name):
