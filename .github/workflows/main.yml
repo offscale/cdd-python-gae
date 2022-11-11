@@ -75,7 +75,6 @@ jobs:
             -   name: Test coverage
                 run: |
                     coverage run -m unittest discover
-                    env
                     bash <(curl --proto '=https' --tlsv1.2 -sSf https://codecov.io/bash)
                 env:
                     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

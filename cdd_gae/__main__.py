@@ -6,9 +6,9 @@
 from argparse import ArgumentParser
 from os import path
 
+import cdd_gae.ndb_parse_emit
+import cdd_gae.webapp2_to_fastapi
 from cdd_gae import __description__, __version__
-from cdd_gae.ndb_parse_emit import ndb_parse_emit_file
-from cdd_gae.webapp2_to_fastapi import webapp2_to_fastapi_file
 
 
 def _build_parser():
@@ -110,9 +110,9 @@ def main(cli_argv=None, return_args=False):
     require_file_existent(_parser, args_dict["input_file"], name="input-file")
 
     return (
-        webapp2_to_fastapi_file
+        cdd_gae.webapp2_to_fastapi.webapp2_to_fastapi_file
         if command == "webapp2_to_fastapi"
-        else ndb_parse_emit_file
+        else cdd_gae.ndb_parse_emit.ndb_parse_emit_file
     )(**args_dict)
 
 

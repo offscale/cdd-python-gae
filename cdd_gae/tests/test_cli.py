@@ -5,8 +5,9 @@ from argparse import ArgumentParser
 from importlib.machinery import SourceFileLoader
 from importlib.util import module_from_spec, spec_from_loader
 from os.path import extsep
+from tempfile import TemporaryDirectory
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from cdd import __description__, __version__
 from cdd.__main__ import _build_parser
@@ -78,6 +79,22 @@ class TestCli(TestCase):
                 )
             ),
         )
+
+    def test_main_is_called_correctly(self) -> None:
+        """Tests that `main` is called correctly"""
+        with TemporaryDirectory() as tmpdir, patch(
+            "cdd_gae.ndb_parse_emit.ndb_parse_emit_file", new_callable=MagicMock
+        ) as func:
+            output_file = os.path.join(tmpdir, "out{extsep}py".format(extsep=extsep))
+            main(
+                cli_argv=["ndb2sqlalchemy", "-i", __file__, "-o", output_file],
+            )
+            self.assertTrue(func.called)
+            self.assertEqual(func.call_count, 1)
+            self.assertEqual(
+                func.call_args,
+                call(input_file=__file__, output_file=output_file, dry_run=False),
+            )
 
 
 unittest_main()

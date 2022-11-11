@@ -1,7 +1,7 @@
 """
 FastAPI mocks that match those in webapp2.py
 """
-
+from _ast import ImportFrom, List, alias
 from ast import (
     Assign,
     Attribute,
@@ -14,6 +14,8 @@ from ast import (
     Store,
     arguments,
 )
+from copy import deepcopy
+from itertools import chain
 
 from cdd.ast_utils import maybe_type_comment, set_value
 
@@ -65,4 +67,35 @@ hello_fastapi_mod = Module(
 )
 
 
-__all__ = ["hello_fastapi_mod", "hello_fastapi_str"]
+hello_fastapi_with_imports_and_all_mod = Module(
+    body=list(
+        chain.from_iterable(
+            (
+                (
+                    ImportFrom(
+                        level=0,
+                        module="fastapi",
+                        names=[alias(asname=None, name="FastAPI")],
+                    ),
+                ),
+                deepcopy(hello_fastapi_mod.body),
+                (
+                    Assign(
+                        targets=[Name(ctx=Store(), id="__all__")],
+                        type_comment=None,
+                        value=List(ctx=Load(), elts=[set_value("app")]),
+                    ),
+                ),
+            )
+        )
+    ),
+    type_ignores=[],
+)
+assert isinstance(hello_fastapi_with_imports_and_all_mod.body[2], FunctionDef)
+hello_fastapi_with_imports_and_all_mod.body[2].name = "HelloWebapp2_get"
+
+__all__ = [
+    "hello_fastapi_mod",
+    "hello_fastapi_str",
+    "hello_fastapi_with_imports_and_all_mod",
+]

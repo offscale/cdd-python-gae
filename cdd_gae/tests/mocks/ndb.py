@@ -1,7 +1,18 @@
 """
 Mocks for NDB
 """
-from ast import Assign, Attribute, Call, ClassDef, Load, Name, Store, keyword
+from ast import (
+    Assign,
+    Attribute,
+    Call,
+    ClassDef,
+    List,
+    Load,
+    Module,
+    Name,
+    Store,
+    keyword,
+)
 from collections import OrderedDict
 
 from cdd.ast_utils import maybe_type_comment, set_value
@@ -273,4 +284,22 @@ ndb_file_sqlalchemy_cls = ClassDef(
     name="File",
 )
 
-__all__ = ["ndb_file_cls", "ndb_file_cls_str", "ndb_file_ir", "ndb_file_sqlalchemy_cls"]
+ndb_file_sqlalchemy_output_mod = Module(
+    body=[
+        ndb_file_sqlalchemy_cls,
+        Assign(
+            targets=[Name(ctx=Store(), id="__all__")],
+            type_comment=None,
+            value=List(ctx=Load(), elts=[set_value("File")]),
+        ),
+    ],
+    type_ignores=[],
+)
+
+__all__ = [
+    "ndb_file_cls",
+    "ndb_file_cls_str",
+    "ndb_file_ir",
+    "ndb_file_sqlalchemy_cls",
+    "ndb_file_sqlalchemy_output_mod",
+]
