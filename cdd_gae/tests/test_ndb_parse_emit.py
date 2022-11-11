@@ -7,8 +7,8 @@ from os import extsep, path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 
+from cdd.ast_utils import cmp_ast
 from cdd.tests.utils_for_tests import unittest_main
-from meta.asttools import cmp_ast
 
 from cdd_gae.ndb_parse_emit import ndb_parse_emit_file
 from cdd_gae.tests.mocks.ndb import ndb_file_cls_str, ndb_file_sqlalchemy_output_mod
