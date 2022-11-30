@@ -5,7 +5,7 @@ from io import StringIO
 from unittest import TestCase
 from unittest.mock import patch
 
-from cdd import emit
+import cdd.emit.sqlalchemy
 from cdd.ast_utils import cmp_ast
 from cdd.tests.utils_for_tests import unittest_main
 
@@ -25,7 +25,7 @@ class TestNdbEmitSqlAlchemy(TestCase):
         self.assertTrue(
             cmp_ast(
                 ndb_file_sqlalchemy_cls,
-                emit.sqlalchemy(
+                cdd.emit.sqlalchemy.sqlalchemy(
                     ndb_file_ir, class_name=ndb_file_ir["name"], emit_repr=False
                 ),
             )

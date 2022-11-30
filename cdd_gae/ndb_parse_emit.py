@@ -6,7 +6,7 @@ from ast import Assign, ClassDef, List, Load, Module, Name, Store, parse
 from functools import partial
 from operator import attrgetter, itemgetter
 
-from cdd import emit
+import cdd.emit.sqlalchemy
 from cdd.ast_utils import maybe_type_comment, set_value
 from cdd.pure_utils import rpartial
 from cdd.source_transformer import to_code
@@ -38,7 +38,7 @@ def ndb_parse_emit_file(input_file, output_file, dry_run=False):
     sqlalchemy_mod = Module(
         body=list(
             map(
-                partial(emit.sqlalchemy, emit_repr=False),
+                partial(cdd.emit.sqlalchemy.sqlalchemy, emit_repr=False),
                 filter(
                     itemgetter("params"),
                     map(
