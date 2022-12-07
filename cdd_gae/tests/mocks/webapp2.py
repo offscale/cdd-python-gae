@@ -1,6 +1,7 @@
 """
 Mocks for webapp2
 """
+
 from ast import (
     Assign,
     Attribute,

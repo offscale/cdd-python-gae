@@ -38,15 +38,7 @@ This was created independent of `cdd-python` project for two reasons:
   0. Unidirectional;
   1. Relevant to fewer people.
 
-## SDK example (REPL)
-
-To create a `class` from [`tf.keras.optimizers.Adam`](https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/Adam):
-
-```python
->>> from cdd.source_transformer import to_code
-
->>> from cdd import emit, parse
-```
+## SDK
 
 ### Approach
 
@@ -71,19 +63,21 @@ Traverse the AST for ndb and webapp2.
 ## CLI for this project
 
     $ python -m cdd_gae --help
-    
     usage: python -m cdd_gae [-h] [--version]
-                             {ndb2sqlalchemy,webapp2_to_fastapi} ...
+                             {ndb2sqlalchemy,ndb2sqlalchemy_migrator,webapp2_to_fastapi}
+                             ...
     
     Migration tooling from Google App Engine (webapp2, ndb) to python-cdd
     supported (FastAPI, SQLalchemy).
     
     positional arguments:
-      {ndb2sqlalchemy,webapp2_to_fastapi}
+      {ndb2sqlalchemy,ndb2sqlalchemy_migrator,webapp2_to_fastapi}
         ndb2sqlalchemy      Parse NDB emit SQLalchemy
+        ndb2sqlalchemy_migrator
+                            Create migration scripts from NDB to SQLalchemy
         webapp2_to_fastapi  Parse WebApp2 emit FastAPI
     
-    options:
+    optional arguments:
       -h, --help            show this help message and exit
       --version             show program's version number and exit
 
@@ -116,6 +110,34 @@ Traverse the AST for ndb and webapp2.
                             Python file to parse WebApp2 `class`es out of
       -o OUTPUT_FILE, --output-file OUTPUT_FILE
                             Empty file to generate FastAPI functions to
+      --dry-run             Show what would be created; don't actually write to
+                            the filesystem.
+
+### `python -m cdd_gae ndb2sqlalchemy_migrator --help`
+
+    $ ndb2sqlalchemy_migrator
+    usage: python -m cdd_gae ndb2sqlalchemy_migrator [-h] --ndb-file NDB_FILE
+                                                     --sqlalchemy-file
+                                                     SQLALCHEMY_FILE
+                                                     --ndb-mod-to-import
+                                                     NDB_MOD_TO_IMPORT
+                                                     --sqlalchemy-mod-to-import
+                                                     SQLALCHEMY_MOD_TO_IMPORT -o
+                                                     OUTPUT_FOLDER [--dry-run]
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      --ndb-file NDB_FILE   Python file containing the NDB `class`es
+      --sqlalchemy-file SQLALCHEMY_FILE
+                            Python file containing the NDB `class`es
+      --ndb-mod-to-import NDB_MOD_TO_IMPORT
+                            NDB module name that the entity will be imported from
+      --sqlalchemy-mod-to-import SQLALCHEMY_MOD_TO_IMPORT
+                            SQLalchemy module name that the entity will be
+                            imported from
+      -o OUTPUT_FOLDER, --output-folder OUTPUT_FOLDER
+                            Empty folder to generate scripts that migrate from one
+                            NDB class to one SQLalchemy class
       --dry-run             Show what would be created; don't actually write to
                             the filesystem.
 

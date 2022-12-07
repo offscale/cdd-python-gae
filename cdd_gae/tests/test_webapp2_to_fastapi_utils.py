@@ -1,8 +1,8 @@
 """
 Tests for WebApp2 to FastAPI utils
 """
-from _ast import Attribute, Call, Expr, Load, Name
-from ast import Module
+
+from ast import Attribute, Call, Expr, Load, Module, Name
 from copy import deepcopy
 from unittest import TestCase
 

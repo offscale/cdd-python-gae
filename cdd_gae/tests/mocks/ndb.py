@@ -1,6 +1,7 @@
 """
 Mocks for NDB
 """
+
 from ast import (
     Assign,
     Attribute,

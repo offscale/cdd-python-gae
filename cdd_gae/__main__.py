@@ -3,9 +3,13 @@
 """
 `__main__` implementation, can be run directly or with `python -m cdd_gae`
 """
+
 from argparse import ArgumentParser
 from os import path
 
+from cdd.pure_utils import pp
+
+import cdd_gae.ndb2sqlalchemy_migrator
 import cdd_gae.ndb_parse_emit
 import cdd_gae.webapp2_to_fastapi
 from cdd_gae import __description__, __version__
@@ -32,26 +36,65 @@ def _build_parser():
     subparsers.required = True
     subparsers.dest = "command"
 
-    #######
-    # ndb #
-    #######
-    ndb_parser = subparsers.add_parser(
+    ##################
+    # ndb2sqlalchemy #
+    ##################
+    ndb2sqlalchemy_parser = subparsers.add_parser(
         "ndb2sqlalchemy",
         help="Parse NDB emit SQLalchemy",
     )
-    ndb_parser.add_argument(
+    ndb2sqlalchemy_parser.add_argument(
         "-i",
         "--input-file",
         help="Python file to parse NDB `class`es out of",
         required=True,
     )
-    ndb_parser.add_argument(
+    ndb2sqlalchemy_parser.add_argument(
         "-o",
         "--output-file",
         help="Empty file to generate SQLalchemy classes to",
         required=True,
     )
-    ndb_parser.add_argument(
+    ndb2sqlalchemy_parser.add_argument(
+        "--dry-run",
+        help="Show what would be created; don't actually write to the filesystem.",
+        action="store_true",
+    )
+
+    ###########################
+    # ndb2sqlalchemy_migrator #
+    ###########################
+    ndb2sqlalchemy_migrator_parser = subparsers.add_parser(
+        "ndb2sqlalchemy_migrator",
+        help="Create migration scripts from NDB to SQLalchemy",
+    )
+    ndb2sqlalchemy_migrator_parser.add_argument(
+        "--ndb-file",
+        help="Python file containing the NDB `class`es",
+        required=True,
+    )
+    ndb2sqlalchemy_migrator_parser.add_argument(
+        "--sqlalchemy-file",
+        help="Python file containing the NDB `class`es",
+        required=True,
+    )
+    ndb2sqlalchemy_migrator_parser.add_argument(
+        "--ndb-mod-to-import",
+        help="NDB module name that the entity will be imported from",
+        required=True,
+    )
+    ndb2sqlalchemy_migrator_parser.add_argument(
+        "--sqlalchemy-mod-to-import",
+        help="SQLalchemy module name that the entity will be imported from",
+        required=True,
+    )
+    ndb2sqlalchemy_migrator_parser.add_argument(
+        "-o",
+        "--output-folder",
+        help="Empty folder to generate scripts that migrate from one NDB class to one SQLalchemy class",
+        required=True,
+    )
+    ndb2sqlalchemy_migrator_parser.add_argument(
         "--dry-run",
         help="Show what would be created; don't actually write to the filesystem.",
         action="store_true",
@@ -60,23 +103,23 @@ def _build_parser():
     ######################
     # webapp2_to_fastapi #
     ######################
-    ndb_parser = subparsers.add_parser(
+    webapp2_to_fastapi_parser = subparsers.add_parser(
         "webapp2_to_fastapi",
         help="Parse WebApp2 emit FastAPI",
     )
-    ndb_parser.add_argument(
+    webapp2_to_fastapi_parser.add_argument(
         "-i",
         "--input-file",
         help="Python file to parse WebApp2 `class`es out of",
         required=True,
     )
-    ndb_parser.add_argument(
+    webapp2_to_fastapi_parser.add_argument(
         "-o",
         "--output-file",
         help="Empty file to generate FastAPI functions to",
         required=True,
     )
-    ndb_parser.add_argument(
+    webapp2_to_fastapi_parser.add_argument(
         "--dry-run",
         help="Show what would be created; don't actually write to the filesystem.",
         action="store_true",
@@ -106,14 +149,20 @@ def main(cli_argv=None, return_args=False):
 
     command = args.command
     args_dict = {k: v for k, v in vars(args).items() if k != "command"}
-    assert command in frozenset(("ndb2sqlalchemy", "webapp2_to_fastapi"))
-    require_file_existent(_parser, args_dict["input_file"], name="input-file")
+    if command in frozenset(("ndb2sqlalchemy", "webapp2_to_fastapi")):
+        require_file_existent(_parser, args_dict["input_file"], name="input-file")
 
-    return (
-        cdd_gae.webapp2_to_fastapi.webapp2_to_fastapi_file
-        if command == "webapp2_to_fastapi"
-        else cdd_gae.ndb_parse_emit.ndb_parse_emit_file
-    )(**args_dict)
+        return (
+            cdd_gae.webapp2_to_fastapi.webapp2_to_fastapi_file
+            if command == "webapp2_to_fastapi"
+            else cdd_gae.ndb_parse_emit.ndb_parse_emit_file
+        )(**args_dict)
+    else:
+        assert command == "ndb2sqlalchemy_migrator"
+        pp(args_dict)
+        return cdd_gae.ndb2sqlalchemy_migrator.ndb2sqlalchemy_migrator_folder(
+            **args_dict
+        )
 
 
 def require_file_existent(_parser, filename, name):
