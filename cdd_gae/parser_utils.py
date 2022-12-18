@@ -5,6 +5,8 @@ Utils for parser.py
 
 from cdd.ast_utils import get_value
 
+from cdd_gae.ndb2sqlalchemy_utils import ndb2sqlalchemy_params
+
 ndb_type_map = {
     "BlobKeyProperty": "str",
     "BlobProperty": "str",
@@ -72,7 +74,9 @@ def ndb_parse_assign(assign):
         "x_typ": {
             "sql": {
                 "constraints": {
-                    keyword.arg: get_value(keyword.value)
+                    ndb2sqlalchemy_params.get(keyword.arg, keyword.arg): get_value(
+                        keyword.value
+                    )
                     for keyword in assign.value.keywords
                 },
                 # "type": assign.value.func.attr

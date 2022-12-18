@@ -145,7 +145,10 @@ def ndb2sqlalchemy(input_file, output_file, dry_run=False):
                                         map(
                                             lambda keyword: keyword.value.func.id,
                                             filter(
-                                                lambda keyword: keyword.arg == "default"
+                                                lambda keyword: keyword.arg
+                                                in frozenset(
+                                                    ("default", "server_default")
+                                                )
                                                 and isinstance(keyword.value, Call),
                                                 call.keywords,
                                             ),
