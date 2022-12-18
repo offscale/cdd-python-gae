@@ -58,7 +58,11 @@ def webapp2_to_fastapi_file(input_file, output_file, dry_run=False):
         ImportFrom(
             level=0,
             module="fastapi",
-            names=[alias(asname=None, name="FastAPI")],
+            names=[
+                alias(
+                    name="FastAPI", asname=None, identifier=None, identifier_name=None
+                )
+            ],
             lineno=None,
         ),
     )

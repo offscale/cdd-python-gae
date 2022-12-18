@@ -14,7 +14,6 @@ __description__ = (
     " to python-cdd supported (FastAPI, SQLalchemy)."
 )
 
-
 root_logger = get_logger()
 logging.getLogger("blib2to3").setLevel(logging.WARNING)
 

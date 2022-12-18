@@ -20,13 +20,13 @@ from cdd.ast_utils import maybe_type_comment, set_value
 
 ndb_file_cls_str = """
 class File(FileBase):
-    updated = ndb.DateTimeProperty(auto_now=True, indexed=False)
+    updated = ndb.DateTimeProperty(auto_now=True, index=False)
 
-    used_at = ndb.DateTimeProperty(indexed=True)
-    archived = ndb.BooleanProperty(default=False, indexed=True)
-    archived_at = ndb.DateTimeProperty(indexed=False)
+    used_at = ndb.DateTimeProperty(index=True)
+    archived = ndb.BooleanProperty(default=False, index=True)
+    archived_at = ndb.DateTimeProperty(index=False)
 
-    path_source = ndb.StringProperty(indexed=True)
+    path_source = ndb.StringProperty(index=True)
     source = ndb.TextProperty()  # For files ingested from external libraries
 """
 
@@ -44,7 +44,7 @@ ndb_file_ir = {
                     "x_typ": {
                         "internal_type": "ndb.DateTimeProperty",
                         "sql": {
-                            "constraints": {"auto_now": True, "indexed": False},
+                            "constraints": {"auto_now": True, "index": False},
                             "type": "DateTime",
                         },
                     },
@@ -57,7 +57,7 @@ ndb_file_ir = {
                     "typ": "str",
                     "x_typ": {
                         "internal_type": "ndb.DateTimeProperty",
-                        "sql": {"constraints": {"indexed": True}, "type": "DateTime"},
+                        "sql": {"constraints": {"index": True}, "type": "DateTime"},
                     },
                 },
             ),
@@ -69,7 +69,7 @@ ndb_file_ir = {
                     "typ": "bool",
                     "x_typ": {
                         "internal_type": "ndb.BooleanProperty",
-                        "sql": {"constraints": {"indexed": True}, "type": "Boolean"},
+                        "sql": {"constraints": {"index": True}, "type": "Boolean"},
                     },
                 },
             ),
@@ -80,7 +80,7 @@ ndb_file_ir = {
                     "typ": "str",
                     "x_typ": {
                         "internal_type": "ndb.DateTimeProperty",
-                        "sql": {"constraints": {"indexed": False}, "type": "DateTime"},
+                        "sql": {"constraints": {"index": False}, "type": "DateTime"},
                     },
                 },
             ),
@@ -90,7 +90,7 @@ ndb_file_ir = {
                     "doc": "",
                     "typ": "str",
                     "x_typ": {
-                        "sql": {"constraints": {"indexed": True}, "type": "String"}
+                        "sql": {"constraints": {"index": True}, "type": "String"}
                     },
                 },
             ),
@@ -127,7 +127,7 @@ ndb_file_cls = ClassDef(
                 args=[],
                 keywords=[
                     keyword(arg="auto_now", value=set_value(True)),
-                    keyword(arg="indexed", value=set_value(False)),
+                    keyword(arg="index", value=set_value(False)),
                 ],
             ),
             expr=None,
@@ -143,7 +143,7 @@ ndb_file_cls = ClassDef(
                     ctx=Load(),
                 ),
                 args=[],
-                keywords=[keyword(arg="indexed", value=set_value(True))],
+                keywords=[keyword(arg="index", value=set_value(True))],
             ),
             expr=None,
             lineno=None,
@@ -158,7 +158,7 @@ ndb_file_cls = ClassDef(
                 args=[],
                 keywords=[
                     keyword(arg="default", value=set_value(False)),
-                    keyword(arg="indexed", value=set_value(True)),
+                    keyword(arg="index", value=set_value(True)),
                 ],
             ),
             expr=None,
@@ -174,7 +174,7 @@ ndb_file_cls = ClassDef(
                     ctx=Load(),
                 ),
                 args=[],
-                keywords=[keyword(arg="indexed", value=set_value(False))],
+                keywords=[keyword(arg="index", value=set_value(False))],
             ),
             expr=None,
             lineno=None,
@@ -187,7 +187,7 @@ ndb_file_cls = ClassDef(
                     value=Name(id="ndb", ctx=Load()), attr="StringProperty", ctx=Load()
                 ),
                 args=[],
-                keywords=[keyword(arg="indexed", value=set_value(True))],
+                keywords=[keyword(arg="index", value=set_value(True))],
             ),
             expr=None,
             lineno=None,
@@ -225,7 +225,7 @@ ndb_file_sqlalchemy_cls = ClassDef(
                 func=Name(ctx=Load(), id="Column"),
                 keywords=[
                     keyword(arg="auto_now", value=set_value(True)),
-                    keyword(arg="indexed", value=set_value(False)),
+                    keyword(arg="index", value=set_value(False)),
                 ],
             ),
             **maybe_type_comment
@@ -235,7 +235,7 @@ ndb_file_sqlalchemy_cls = ClassDef(
             value=Call(
                 args=[Name(ctx=Load(), id="DateTime")],
                 func=Name(ctx=Load(), id="Column"),
-                keywords=[keyword(arg="indexed", value=set_value(True))],
+                keywords=[keyword(arg="index", value=set_value(True))],
             ),
             **maybe_type_comment
         ),
@@ -245,7 +245,7 @@ ndb_file_sqlalchemy_cls = ClassDef(
                 args=[Name(ctx=Load(), id="Boolean")],
                 func=Name(ctx=Load(), id="Column"),
                 keywords=[
-                    keyword(arg="indexed", value=set_value(True)),
+                    keyword(arg="index", value=set_value(True)),
                     keyword(arg="default", value=set_value(False)),
                     keyword(arg="nullable", value=set_value(False)),
                 ],
@@ -257,7 +257,7 @@ ndb_file_sqlalchemy_cls = ClassDef(
             value=Call(
                 args=[Name(ctx=Load(), id="DateTime")],
                 func=Name(ctx=Load(), id="Column"),
-                keywords=[keyword(arg="indexed", value=set_value(False))],
+                keywords=[keyword(arg="index", value=set_value(False))],
             ),
             **maybe_type_comment
         ),
@@ -266,7 +266,7 @@ ndb_file_sqlalchemy_cls = ClassDef(
             value=Call(
                 args=[Name(ctx=Load(), id="String")],
                 func=Name(ctx=Load(), id="Column"),
-                keywords=[keyword(arg="indexed", value=set_value(True))],
+                keywords=[keyword(arg="index", value=set_value(True))],
             ),
             **maybe_type_comment
         ),

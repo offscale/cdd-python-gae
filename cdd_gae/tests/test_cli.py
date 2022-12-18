@@ -83,7 +83,7 @@ class TestCli(TestCase):
     def test_main_is_called_correctly(self) -> None:
         """Tests that `main` is called correctly"""
         with TemporaryDirectory() as tmpdir, patch(
-            "cdd_gae.ndb_parse_emit.ndb_parse_emit_file", new_callable=MagicMock
+            "cdd_gae.ndb2sqlalchemy.ndb2sqlalchemy", new_callable=MagicMock
         ) as func:
             output_file = os.path.join(tmpdir, "out{extsep}py".format(extsep=extsep))
             main(

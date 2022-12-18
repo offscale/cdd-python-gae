@@ -10,11 +10,11 @@ from unittest import TestCase
 from cdd.ast_utils import cmp_ast
 from cdd.tests.utils_for_tests import unittest_main
 
-from cdd_gae.ndb_parse_emit import ndb_parse_emit_file
+from cdd_gae.ndb2sqlalchemy import ndb2sqlalchemy
 from cdd_gae.tests.mocks.ndb import ndb_file_cls_str, ndb_file_sqlalchemy_output_mod
 
 
-class TestNdbParseEmit(TestCase):
+class TestNdb2SqlAlchemy(TestCase):
     """
     Tests whether ndb classes are parsed and emitted correctly
     """
@@ -29,7 +29,7 @@ class TestNdbParseEmit(TestCase):
             with open(input_file, "wt") as f:
                 f.write(ndb_file_cls_str)
 
-            ndb_parse_emit_file(input_file=input_file, output_file=output_file)
+            ndb2sqlalchemy(input_file=input_file, output_file=output_file)
             with open(output_file, "rt") as f:
                 self.assertTrue(
                     cmp_ast(ndb_file_sqlalchemy_output_mod, parse(f.read()))

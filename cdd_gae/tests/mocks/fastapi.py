@@ -1,17 +1,20 @@
 """
 FastAPI mocks that match those in webapp2.py
 """
-from _ast import ImportFrom, List, alias
+
 from ast import (
     Assign,
     Attribute,
     Call,
     FunctionDef,
+    ImportFrom,
+    List,
     Load,
     Module,
     Name,
     Return,
     Store,
+    alias,
     arguments,
 )
 from copy import deepcopy
@@ -75,7 +78,14 @@ hello_fastapi_with_imports_and_all_mod = Module(
                     ImportFrom(
                         level=0,
                         module="fastapi",
-                        names=[alias(asname=None, name="FastAPI")],
+                        names=[
+                            alias(
+                                name="FastAPI",
+                                asname=None,
+                                identifier=None,
+                                identifier_name=None,
+                            )
+                        ],
                     ),
                 ),
                 deepcopy(hello_fastapi_mod.body),
@@ -93,6 +103,23 @@ hello_fastapi_with_imports_and_all_mod = Module(
 )
 assert isinstance(hello_fastapi_with_imports_and_all_mod.body[2], FunctionDef)
 hello_fastapi_with_imports_and_all_mod.body[2].name = "HelloWebapp2_get"
+
+
+item_create_fastapi_str = """
+class Item(BaseModel):
+    name: str
+    description: Union[str, None] = None
+    price: float
+    tax: Union[float, None] = None
+
+
+app = FastAPI()
+
+
+@app.post("/items/")
+async def create_item(item: Item):
+    return items
+"""
 
 __all__ = [
     "hello_fastapi_mod",

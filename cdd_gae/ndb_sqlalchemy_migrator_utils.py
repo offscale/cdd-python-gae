@@ -45,21 +45,61 @@ def generate_ndb_to_sqlalchemy_mod(
     ndb_name = "NDB_{name}".format(name=name)
     return Module(
         body=[
-            ImportFrom(module="google.cloud", names=[alias(name="ndb")], level=0),
             ImportFrom(
-                module="sqlalchemy", names=[alias(name="create_engine")], level=0
+                module="google.cloud",
+                names=[
+                    alias(
+                        name="ndb", asname=None, identifier=None, identifier_name=None
+                    )
+                ],
+                level=0,
             ),
             ImportFrom(
-                module="sqlalchemy.orm", names=[alias(name="sessionmaker")], level=0
+                module="sqlalchemy",
+                names=[
+                    alias(
+                        name="create_engine",
+                        asname=None,
+                        identifier=None,
+                        identifier_name=None,
+                    )
+                ],
+                level=0,
+            ),
+            ImportFrom(
+                module="sqlalchemy.orm",
+                names=[
+                    alias(
+                        name="sessionmaker",
+                        asname=None,
+                        identifier=None,
+                        identifier_name=None,
+                    )
+                ],
+                level=0,
             ),
             ImportFrom(
                 module=ndb_mod_to_import,
-                names=[alias(name=name, asname=ndb_name)],
+                names=[
+                    alias(
+                        name=name,
+                        asname=ndb_name,
+                        identifier=None,
+                        identifier_name=None,
+                    )
+                ],
                 level=0,
             ),
             ImportFrom(
                 module=sqlalchemy_mod_to_import,
-                names=[alias(name=name, asname=sql_name)],
+                names=[
+                    alias(
+                        name=name,
+                        asname=sql_name,
+                        identifier=None,
+                        identifier_name=None,
+                    )
+                ],
                 level=0,
             ),
             Assign(

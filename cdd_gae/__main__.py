@@ -7,10 +7,8 @@
 from argparse import ArgumentParser
 from os import path
 
-from cdd.pure_utils import pp
-
+import cdd_gae.ndb2sqlalchemy
 import cdd_gae.ndb2sqlalchemy_migrator
-import cdd_gae.ndb_parse_emit
 import cdd_gae.webapp2_to_fastapi
 from cdd_gae import __description__, __version__
 
@@ -155,11 +153,10 @@ def main(cli_argv=None, return_args=False):
         return (
             cdd_gae.webapp2_to_fastapi.webapp2_to_fastapi_file
             if command == "webapp2_to_fastapi"
-            else cdd_gae.ndb_parse_emit.ndb_parse_emit_file
+            else cdd_gae.ndb2sqlalchemy.ndb2sqlalchemy
         )(**args_dict)
     else:
         assert command == "ndb2sqlalchemy_migrator"
-        pp(args_dict)
         return cdd_gae.ndb2sqlalchemy_migrator.ndb2sqlalchemy_migrator_folder(
             **args_dict
         )
