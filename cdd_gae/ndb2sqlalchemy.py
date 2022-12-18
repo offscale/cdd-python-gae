@@ -22,7 +22,7 @@ from operator import itemgetter
 
 import cdd.emit.sqlalchemy
 from cdd.ast_utils import get_value, maybe_type_comment, set_value
-from cdd.pure_utils import pp, rpartial
+from cdd.pure_utils import rpartial
 from cdd.source_transformer import to_code
 
 from cdd_gae import parser
@@ -57,6 +57,7 @@ def ndb2sqlalchemy(input_file, output_file, dry_run=False):
             "DateTime",
             "Enum",
             "Float",
+            "Identity",
             "Integer",
             "Interval",
             "JSON",
@@ -127,6 +128,7 @@ def ndb2sqlalchemy(input_file, output_file, dry_run=False):
         stmt=None,
     )
     types = set()
+    # Figure out what is used for the `from sqlalchemy import <>` expression
     sqlalchemy_mod.body[-1].value = List(
         ctx=Load(),
         elts=list(
@@ -137,11 +139,28 @@ def ndb2sqlalchemy(input_file, output_file, dry_run=False):
                         map(
                             types.add,
                             map(
-                                lambda ass: get_value(ass).args[0].id,
-                                filter(
-                                    lambda node: isinstance(node, Assign)
-                                    and isinstance(node.value, Call),
-                                    cls_def.body,
+                                lambda call: deque(
+                                    map(
+                                        types.add,
+                                        map(
+                                            lambda keyword: keyword.value.func.id,
+                                            filter(
+                                                lambda keyword: keyword.arg == "default"
+                                                and isinstance(keyword.value, Call),
+                                                call.keywords,
+                                            ),
+                                        ),
+                                    ),
+                                    maxlen=0,
+                                )
+                                or call.args[0].id,
+                                map(
+                                    get_value,
+                                    filter(
+                                        lambda node: isinstance(node, Assign)
+                                        and isinstance(node.value, Call),
+                                        cls_def.body,
+                                    ),
                                 ),
                             ),
                         ),
