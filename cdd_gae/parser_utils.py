@@ -3,9 +3,7 @@ Utils for parser.py
 """
 
 
-from cdd.ast_utils import get_value
-
-from cdd_gae.ndb2sqlalchemy_utils import ndb2sqlalchemy_params
+from cdd_gae.ndb2sqlalchemy_utils import ndb_to_sqlalchemy_keyword
 
 ndb_type_map = {
     "BlobKeyProperty": "str",
@@ -73,12 +71,9 @@ def ndb_parse_assign(assign):
         "typ": ndb_type_map[assign.value.func.attr],
         "x_typ": {
             "sql": {
-                "constraints": {
-                    ndb2sqlalchemy_params.get(keyword.arg, keyword.arg): get_value(
-                        keyword.value
-                    )
-                    for keyword in assign.value.keywords
-                },
+                "constraints": dict(
+                    map(ndb_to_sqlalchemy_keyword, assign.value.keywords)
+                ),
                 # "type": assign.value.func.attr
             }
             if assign.value.keywords

@@ -1,7 +1,7 @@
 """
 Function to migrate from NDB to SQLalchemy.
 """
-
+from _ast import Compare, Eq, If, Subscript
 from ast import (
     Assign,
     Attribute,
@@ -16,6 +16,8 @@ from ast import (
     alias,
     keyword,
 )
+from functools import partial
+from operator import ne
 
 from cdd.ast_utils import maybe_type_comment, set_value
 
@@ -45,176 +47,56 @@ def generate_ndb_to_sqlalchemy_mod(
     ndb_name = "NDB_{name}".format(name=name)
     return Module(
         body=[
+            ImportFrom(module="os", names=[alias(name="environ")], level=0),
+            ImportFrom(module="google.cloud", names=[alias(name="ndb")], level=0),
             ImportFrom(
-                module="google.cloud",
-                names=[
-                    alias(
-                        name="ndb", asname=None, identifier=None, identifier_name=None
-                    )
-                ],
-                level=0,
+                module="sqlalchemy", names=[alias(name="create_engine")], level=0
             ),
             ImportFrom(
-                module="sqlalchemy",
-                names=[
-                    alias(
-                        name="create_engine",
-                        asname=None,
-                        identifier=None,
-                        identifier_name=None,
-                    )
-                ],
-                level=0,
-            ),
-            ImportFrom(
-                module="sqlalchemy.orm",
-                names=[
-                    alias(
-                        name="sessionmaker",
-                        asname=None,
-                        identifier=None,
-                        identifier_name=None,
-                    )
-                ],
-                level=0,
+                module="sqlalchemy.orm", names=[alias(name="sessionmaker")], level=0
             ),
             ImportFrom(
                 module=ndb_mod_to_import,
-                names=[
-                    alias(
-                        name=name,
-                        asname=ndb_name,
-                        identifier=None,
-                        identifier_name=None,
-                    )
-                ],
+                names=[alias(name=name, asname=ndb_name)],
                 level=0,
             ),
             ImportFrom(
                 module=sqlalchemy_mod_to_import,
-                names=[
-                    alias(
-                        name=name,
-                        asname=sql_name,
-                        identifier=None,
-                        identifier_name=None,
-                    )
-                ],
+                names=[alias(name=name, asname=sql_name)],
                 level=0,
             ),
-            Assign(
-                targets=[Name(id="ndb_client", ctx=Store())],
-                value=Call(
-                    func=Attribute(
-                        value=Name(id="ndb", ctx=Load()), attr="Client", ctx=Load()
-                    ),
-                    args=[],
-                    keywords=[],
-                ),
-                expr=None,
-                lineno=None,
-                **maybe_type_comment,
-            ),
-            Assign(
-                targets=[Name(id="ndb_context", ctx=Store())],
-                value=Call(
-                    func=Attribute(
-                        value=Name(id="ndb_client", ctx=Load()),
-                        attr="context",
-                        ctx=Load(),
-                    ),
-                    args=[],
-                    keywords=[],
-                ),
-                expr=None,
-                lineno=None,
-                **maybe_type_comment,
-            ),
-            Expr(
-                value=Call(
-                    func=Attribute(
-                        value=Name(id="ndb_context", ctx=Load()),
-                        attr="set_cache_policy",
-                        ctx=Load(),
-                    ),
-                    args=[set_value(False)],
-                    keywords=[],
-                )
-            ),
-            Assign(
-                targets=[Name(id="engine", ctx=Store())],
-                value=Call(
-                    func=Name(id="create_engine", ctx=Load()),
-                    args=[
-                        set_value(
-                            "postgresql://user:password@localhost:5432/mydatabase"
-                        )
-                    ],
-                    keywords=[],
-                ),
-                expr=None,
-                lineno=None,
-                **maybe_type_comment,
-            ),
-            Assign(
-                targets=[Name(id="Session", ctx=Store())],
-                value=Call(
-                    func=Name(id="sessionmaker", ctx=Load()),
-                    args=[],
-                    keywords=[keyword(arg="bind", value=Name(id="engine", ctx=Load()))],
-                ),
-                expr=None,
-                lineno=None,
-                **maybe_type_comment,
-            ),
-            Assign(
-                targets=[Name(id="session", ctx=Store())],
-                value=Call(func=Name(id="Session", ctx=Load()), args=[], keywords=[]),
-                expr=None,
-                lineno=None,
-                **maybe_type_comment,
-            ),
-            Assign(
-                targets=[Name(id="query", ctx=Store())],
-                value=Call(
-                    func=Attribute(
-                        value=Name(id=ndb_name, ctx=Load()), attr="query", ctx=Load()
-                    ),
-                    args=[],
-                    keywords=[],
-                ),
-                expr=None,
-                lineno=None,
-                **maybe_type_comment,
-            ),
-            For(
-                target=Name(id="ndb_entity", ctx=Store()),
-                iter=Call(
-                    func=Attribute(
-                        value=Name(id="query", ctx=Load()), attr="fetch", ctx=Load()
-                    ),
-                    args=[],
-                    keywords=[],
+            If(
+                test=Compare(
+                    left=Name(id="__name__", ctx=Load()),
+                    ops=[Eq()],
+                    comparators=[set_value("__main__")],
                 ),
                 body=[
                     Assign(
-                        targets=[Name(id="new_sql_entity", ctx=Store())],
+                        targets=[Name(id="ndb_client", ctx=Store())],
                         value=Call(
-                            func=Name(id=sql_name, ctx=Load()),
-                            args=[],
-                            keywords=list(
-                                map(
-                                    lambda field: keyword(
-                                        arg=field,
-                                        value=Attribute(
-                                            value=Name(id="ndb_entity", ctx=Load()),
-                                            attr=field,
-                                            ctx=Load(),
-                                        ),
-                                    ),
-                                    fields,
-                                )
+                            func=Attribute(
+                                value=Name(id="ndb", ctx=Load()),
+                                attr="Client",
+                                ctx=Load(),
                             ),
+                            args=[],
+                            keywords=[],
+                        ),
+                        expr=None,
+                        lineno=None,
+                        **maybe_type_comment,
+                    ),
+                    Assign(
+                        targets=[Name(id="ndb_context", ctx=Store())],
+                        value=Call(
+                            func=Attribute(
+                                value=Name(id="ndb_client", ctx=Load()),
+                                attr="context",
+                                ctx=Load(),
+                            ),
+                            args=[],
+                            keywords=[],
                         ),
                         expr=None,
                         lineno=None,
@@ -223,26 +105,179 @@ def generate_ndb_to_sqlalchemy_mod(
                     Expr(
                         value=Call(
                             func=Attribute(
-                                value=Name(id="session", ctx=Load()),
-                                attr="add",
+                                value=Name(id="ndb_context", ctx=Load()),
+                                attr="set_cache_policy",
                                 ctx=Load(),
                             ),
-                            args=[Name(id="new_sql_entity", ctx=Load())],
+                            args=[set_value(False)],
+                            keywords=[],
+                        )
+                    ),
+                    Assign(
+                        targets=[Name(id="engine", ctx=Store())],
+                        value=Call(
+                            func=Name(id="create_engine", ctx=Load()),
+                            args=[
+                                Subscript(
+                                    value=Name(id="environ", ctx=Load()),
+                                    slice=set_value("RDBMS_URI"),
+                                    ctx=Load(),
+                                )
+                            ],
+                            keywords=[],
+                        ),
+                        expr=None,
+                        lineno=None,
+                        **maybe_type_comment,
+                    ),
+                    Assign(
+                        targets=[Name(id="Session", ctx=Store())],
+                        value=Call(
+                            func=Name(id="sessionmaker", ctx=Load()),
+                            args=[],
+                            keywords=[
+                                keyword(arg="bind", value=Name(id="engine", ctx=Load()))
+                            ],
+                        ),
+                        expr=None,
+                        lineno=None,
+                        **maybe_type_comment,
+                    ),
+                    Expr(
+                        value=Call(
+                            func=Attribute(
+                                value=Attribute(
+                                    value=Name(id=sql_name, ctx=Load()),
+                                    attr="metadata",
+                                    ctx=Load(),
+                                ),
+                                attr="create_all",
+                                ctx=Load(),
+                            ),
+                            args=[Name(id="engine", ctx=Load())],
+                            keywords=[],
+                        )
+                    ),
+                    Assign(
+                        targets=[Name(id="session", ctx=Store())],
+                        value=Call(
+                            func=Name(id="Session", ctx=Load()), args=[], keywords=[]
+                        ),
+                        expr=None,
+                        lineno=None,
+                        **maybe_type_comment,
+                    ),
+                    Assign(
+                        targets=[Name(id="query", ctx=Store())],
+                        value=Call(
+                            func=Attribute(
+                                value=Name(id=ndb_name, ctx=Load()),
+                                attr="query",
+                                ctx=Load(),
+                            ),
+                            args=[],
+                            keywords=[],
+                        ),
+                        expr=None,
+                        lineno=None,
+                        **maybe_type_comment,
+                    ),
+                    Assign(
+                        targets=[Name(id="entity_no", ctx=Store())],
+                        value=set_value(0),
+                        expr=None,
+                        lineno=None,
+                        **maybe_type_comment,
+                    ),
+                    Assign(
+                        targets=[Name(id="batch_size", ctx=Store())],
+                        value=set_value(20),
+                        expr=None,
+                        lineno=None,
+                        **maybe_type_comment,
+                    ),
+                    For(
+                        target=Name(id="ndb_entity", ctx=Store()),
+                        iter=Call(
+                            func=Attribute(
+                                value=Name(id="query", ctx=Load()),
+                                attr="fetch",
+                                ctx=Load(),
+                            ),
+                            args=[],
+                            keywords=[
+                                keyword(arg="offset", value=set_value(0)),
+                                keyword(
+                                    arg="batch_size",
+                                    value=Name(id="batch_size", ctx=Load()),
+                                ),
+                            ],
+                        ),
+                        body=[
+                            Assign(
+                                targets=[Name(id="new_sql_entity", ctx=Store())],
+                                value=Call(
+                                    func=Name(id=sql_name, ctx=Load()),
+                                    args=[],
+                                    keywords=list(
+                                        map(
+                                            lambda field: keyword(
+                                                arg=field,
+                                                value=Attribute(
+                                                    value=Name(
+                                                        id="ndb_entity", ctx=Load()
+                                                    ),
+                                                    attr=field,
+                                                    ctx=Load(),
+                                                ),
+                                            ),
+                                            filter(partial(ne, "id"), fields),
+                                        )
+                                    ),
+                                ),
+                                expr=None,
+                                lineno=None,
+                                **maybe_type_comment,
+                            ),
+                            Expr(
+                                value=Call(
+                                    func=Attribute(
+                                        value=Name(id="session", ctx=Load()),
+                                        attr="add",
+                                        ctx=Load(),
+                                    ),
+                                    args=[Name(id="new_sql_entity", ctx=Load())],
+                                    keywords=[],
+                                )
+                            ),
+                        ],
+                        orelse=[],
+                        lineno=None,
+                    ),
+                    Expr(
+                        value=Call(
+                            func=Name(id="print", ctx=Load()),
+                            args=[
+                                set_value("Committing"),
+                                Name(id="entity_no", ctx=Load()),
+                                set_value("Accounts"),
+                            ],
+                            keywords=[],
+                        )
+                    ),
+                    Expr(
+                        value=Call(
+                            func=Attribute(
+                                value=Name(id="session", ctx=Load()),
+                                attr="commit",
+                                ctx=Load(),
+                            ),
+                            args=[],
                             keywords=[],
                         )
                     ),
                 ],
                 orelse=[],
-                lineno=None,
-            ),
-            Expr(
-                value=Call(
-                    func=Attribute(
-                        value=Name(id="session", ctx=Load()), attr="commit", ctx=Load()
-                    ),
-                    args=[],
-                    keywords=[],
-                )
             ),
         ],
         type_ignores=[],

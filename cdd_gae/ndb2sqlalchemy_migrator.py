@@ -4,7 +4,9 @@ Create migration scripts from NDB to SQLalchemy
 
 from ast import ClassDef, parse
 from collections import deque
-from operator import attrgetter
+from functools import partial
+from itertools import filterfalse
+from operator import attrgetter, contains
 from os import listdir, path
 
 import cdd.parse.sqlalchemy
@@ -118,9 +120,16 @@ def ndb2sqlalchemy_migrator_folder(
             ),
         )
     )
-    assert len(ndb_class_defs) == len(
-        sqlalchemy_class_defs
-    ), "# found SQLalchemy models != # found NDB models"
+    len_ndb_class_defs = len(ndb_class_defs)
+    len_sqlalchemy_class_defs = len(sqlalchemy_class_defs)
+
+    assert (
+        len_ndb_class_defs == len_sqlalchemy_class_defs - 1
+    ), "{} found SQLalchemy models != {} found NDB models, missing: {}".format(
+        len_ndb_class_defs,
+        len_sqlalchemy_class_defs,
+        frozenset(ndb_class_defs.keys()) ^ frozenset(sqlalchemy_class_defs.keys()),
+    )
 
     deque(
         map(
@@ -134,7 +143,14 @@ def ndb2sqlalchemy_migrator_folder(
                     "{entity}{extsep}py".format(entity=entity, extsep=path.extsep),
                 ),
             ),
-            entities,
+            filterfalse(
+                partial(
+                    contains,
+                    frozenset(ndb_class_defs.keys())
+                    ^ frozenset(sqlalchemy_class_defs.keys()),
+                ),
+                entities,
+            ),
         ),
         maxlen=0,
     )

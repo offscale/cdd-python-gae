@@ -140,9 +140,9 @@ def webapp2_to_fastapi(mod):
                                 args=[],
                                 keywords=[],
                             ),
-                            **maybe_type_comment,
                             expr=None,
                             lineno=None,
+                            **maybe_type_comment,
                         ),
                     ),
                     chain.from_iterable(
