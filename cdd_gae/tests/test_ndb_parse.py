@@ -3,9 +3,10 @@ Tests for NDB parsing
 """
 
 from ast import parse
+from collections import OrderedDict
 from unittest import TestCase
 
-from cdd.ast_utils import cmp_ast
+from cdd.ast_utils import cmp_ast, get_value
 from cdd.pure_utils import remove_whitespace_comments
 from cdd.source_transformer import to_code
 from cdd.tests.utils_for_tests import unittest_main
@@ -33,7 +34,31 @@ class TestNdbParse(TestCase):
         """
         Tests that mock IR matches what `ndb_class_def` creates
         """
-        self.assertDictEqual(ndb_file_ir, ndb(ndb_file_cls_str))
+        ir = ndb(ndb_file_cls_str)
+
+        def dict_unroll(d):
+            return (
+                {k: dict_unroll(get_value(v)) for k, v in d.items()}
+                if isinstance(d, dict)
+                else d
+            )
+
+        ir["params"] = OrderedDict(
+            (
+                (
+                    name,
+                    {key: dict_unroll(val) for key, val in param.items()},
+                )
+                for name, param in ir["params"].items()
+            )
+        )
+        ir["params"]["updated"]["x_typ"]["sql"]["constraints"][
+            "onupdate"
+        ] = ndb_file_ir["params"]["updated"]["x_typ"]["sql"]["constraints"]["onupdate"]
+
+        self.assertDictEqual(ndb_file_ir, ir)
+
+    maxDiff = None
 
 
 unittest_main()

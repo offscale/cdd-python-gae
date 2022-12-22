@@ -44,7 +44,7 @@ ndb_file_ir = {
                     "x_typ": {
                         "internal_type": "ndb.DateTimeProperty",
                         "sql": {
-                            "constraints": {"auto_now": True, "index": False},
+                            "constraints": {"index": False, "onupdate": Call()},
                             "type": "DateTime",
                         },
                     },

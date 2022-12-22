@@ -260,7 +260,7 @@ def generate_ndb_to_sqlalchemy_mod(
                             args=[
                                 set_value("Committing"),
                                 Name(id="entity_no", ctx=Load()),
-                                set_value("Accounts"),
+                                set_value(name),
                             ],
                             keywords=[],
                         )

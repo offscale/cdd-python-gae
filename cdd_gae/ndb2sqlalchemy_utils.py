@@ -2,9 +2,7 @@
 Module that holds a utility dict for parses NDB types and emits SQLalchemy types/constraints
 """
 
-import ast
-from _ast import Tuple
-from ast import Attribute, Call, Load, Name
+from ast import Tuple, Attribute, Call, Load, Name
 
 from cdd.ast_utils import get_value
 
@@ -55,8 +53,8 @@ def ndb_to_sqlalchemy_keyword(keyword):
             "TODO: Maybe with `ARRAY` type?"
             " https://cloud.google.com/appengine/docs/legacy/standard/python/ndb/entity-property-reference#repeated",
         )
-    else:
-        print(ast.dump(keyword.value, indent=4))
+    # else:
+    #     print(ast.dump(keyword.value, indent=4))
     return keyword.arg, keyword.value
 
 
