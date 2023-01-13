@@ -2,6 +2,7 @@
 Utils for parser.py
 """
 
+from cdd.ast_utils import get_value
 
 from cdd_gae.ndb2sqlalchemy_utils import ndb_to_sqlalchemy_keyword
 
@@ -81,7 +82,7 @@ def ndb_parse_assign(assign):
         },
     }
     if "default" in ir["x_typ"].get("sql", {}).get("constraints", ()):
-        ir["default"] = ir["x_typ"]["sql"]["constraints"].pop("default")
+        ir["default"] = get_value(ir["x_typ"]["sql"]["constraints"].pop("default"))
     internal_type = ".".join((assign.value.func.value.id, assign.value.func.attr))
 
     ir["x_typ"]["sql"]["type"] = ndb2sqlalchemy_types[assign.value.func.attr]
