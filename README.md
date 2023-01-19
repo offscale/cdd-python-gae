@@ -143,6 +143,39 @@ Traverse the AST for ndb and webapp2.
 
 ---
 
+## Data migration
+
+The most efficient way seems to be:
+
+  0. Backup from NDB to Google Cloud Storage
+  1. Import from Google Cloud Storage to Google BigQuery
+  2. Export from Google BigQuery to Apache Parquet files in Google Cloud Storage
+  3. Download and parse the Parquet files, then insert into SQL
+
+(for the following scripts set `GOOGLE_PROJECT_ID`, `GOOGLE_BUCKET_NAME`, `NAMESPACE`, `GOOGLE_LOCATION`)
+
+### Backup from NDB to Google Cloud Storage
+```sh
+for entity in kind0 kind1; do
+  gcloud datastore export 'gs://'"$GOOGLE_BUCKET_NAME" --project "$GOOGLE_PROJECT_ID" --kinds "$entity" --async &
+done
+```
+
+### Import from Google Cloud Storage to Google BigQuery
+```sh
+printf 'bq mk "%s"\n' "$NAMESPACE" > migrate.bash
+gsutil ls 'gs://'"$GOOGLE_BUCKET_NAME"'/**/all_namespaces/kind_*' | python3 -c 'import sys, posixpath, fileinput; f=fileinput.input(encoding="utf-8"); d=dict(map(lambda e: (posixpath.basename(posixpath.dirname(e)), posixpath.dirname(e)), sorted(f))); f.close(); print("\n".join(map(lambda k: "( bq mk \"$NAMESPACE.{k}\" && bq --location=$GOOGLE_LOCATION load --source_format=DATASTORE_BACKUP \"$NAMESPACE.{k}\" \"{v}/all_namespaces_{k}.export_metadata\" ) &".format(k=k, v=d[k]), sorted(d.keys()))),sep="");' >> migrate.bash
+# Then run `bash migrate.bash`
+```
+
+```sh
+for entity in kind0 kind1; do
+  bq extract --location="$GOOGLE_LOCATION" --destination_format='PARQUET' "$NAMESPACE"'.kind_'"$entity" 'gs://'"$GOOGLE_BUCKET_NAME"'/'"$entity"'/*' &
+done
+```
+
+---
+
 ## License
 
 Licensed under either of
