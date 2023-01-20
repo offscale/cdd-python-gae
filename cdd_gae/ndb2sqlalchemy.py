@@ -25,7 +25,7 @@ from cdd.ast_utils import get_value, maybe_type_comment, set_value
 from cdd.pure_utils import rpartial
 from cdd.source_transformer import to_code
 
-from cdd_gae import parser
+from cdd_gae.parse import ndb
 
 
 def ndb2sqlalchemy(input_file, output_file, dry_run=False):
@@ -107,7 +107,7 @@ def ndb2sqlalchemy(input_file, output_file, dry_run=False):
                         filter(
                             itemgetter("params"),
                             map(
-                                parser.ndb_class_def,
+                                ndb.ndb_class_def,
                                 filter(rpartial(isinstance, ClassDef), mod.body),
                             ),
                         ),

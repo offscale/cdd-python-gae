@@ -2,7 +2,7 @@
 Module that holds a utility dict for parses NDB types and emits SQLalchemy types/constraints
 """
 
-from ast import Tuple, Attribute, Call, Load, Name
+from ast import Attribute, Call, Load, Name, Tuple
 
 from cdd.ast_utils import get_value
 

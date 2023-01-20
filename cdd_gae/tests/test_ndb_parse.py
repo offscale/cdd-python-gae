@@ -11,7 +11,7 @@ from cdd.pure_utils import remove_whitespace_comments
 from cdd.source_transformer import to_code
 from cdd.tests.utils_for_tests import unittest_main
 
-from cdd_gae.parser import ndb
+from cdd_gae.parse.ndb import ndb
 from cdd_gae.tests.mocks.ndb import ndb_file_cls, ndb_file_cls_str, ndb_file_ir
 
 

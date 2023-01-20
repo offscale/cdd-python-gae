@@ -4,3 +4,4 @@ python-cdd>=0.0.84b0
 black
 pyyaml
 typing-extensions
+pyarrow

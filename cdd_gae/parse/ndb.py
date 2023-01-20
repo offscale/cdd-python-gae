@@ -5,7 +5,7 @@ Parsers for cdd GAE
 from ast import Assign, Attribute, Call, ClassDef, get_docstring, parse
 from collections import OrderedDict
 
-from cdd_gae.parser_utils import ndb_parse_assign
+from cdd_gae.parse.ndb_utils import ndb_parse_assign
 
 
 def ndb(source):

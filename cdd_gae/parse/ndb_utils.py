@@ -1,5 +1,5 @@
 """
-Utils for parser.py
+Utils for ndb.py
 """
 
 from cdd.ast_utils import get_value
