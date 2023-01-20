@@ -24,7 +24,7 @@ def parquet(source):
             (
                 (
                     name,
-                    parquet_type_to_param(parquet_file.schema_arrow.field(name).type),
+                    parquet_type_to_param(parquet_file.schema_arrow.field(name)),
                 )
                 for name in parquet_file.schema_arrow.names
             )
