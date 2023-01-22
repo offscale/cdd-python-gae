@@ -2,8 +2,8 @@
 Parquet parser utils
 """
 
+from collections import OrderedDict
 from itertools import chain
-from operator import attrgetter
 
 import pyarrow
 from pyarrow import DataType, ListType, StructType, TimestampType
@@ -29,7 +29,7 @@ def parquet_type_to_param(field):
     :param field: PyArrow field
     :type field: ```pyarrow.lib.Field```
 
-    :return: {"typ": <parsed_type_as_str>}
+    :return: Union[{"typ": <parsed_type_as_str>}|intermediate_repr]
     :rtype: ```dict```
     """
     field_type = field.type
@@ -37,20 +37,28 @@ def parquet_type_to_param(field):
         return {"typ": str(field_type)}
     elif isinstance(field_type, StructType):
         return {
-            "typ": list(map(lambda flattened: str(flattened.type), field.flatten()))
+            "typ": "dict",
+            "ir": {
+                "name": field.name,
+                "params": OrderedDict(
+                    map(
+                        lambda flattened: (flattened.name, str(flattened.type)),
+                        field.flatten(),
+                    )
+                ),
+                "returns": None,
+            },
         }
     elif isinstance(field_type, ListType):
         reduction = field_type.__reduce__()
         assert len(reduction) > 1
         assert reduction[0] == pyarrow.lib.list_
         return {
-            "typ": union_or_scalar(
+            "typ": (lambda iterable: "List[{}]".format(",".join(iterable)))(
                 tuple(
-                    chain.from_iterable(
-                        map(
-                            lambda t: map(str, map(attrgetter("type"), t)),
-                            reduction[1:],
-                        )
+                    map(
+                        lambda flattened: str(flattened.type),
+                        chain.from_iterable(reduction[1:]),
                     )
                 )
             )
