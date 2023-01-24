@@ -92,8 +92,8 @@ hello_fastapi_with_imports_and_all_mod = Module(
                 (
                     Assign(
                         targets=[Name(ctx=Store(), id="__all__")],
-                        type_comment=None,
                         value=List(ctx=Load(), elts=[set_value("app")]),
+                        **maybe_type_comment
                     ),
                 ),
             )

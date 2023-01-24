@@ -318,6 +318,7 @@ ndb_file_sqlalchemy_cls = ClassDef(
                     ),
                 ],
             ),
+            **maybe_type_comment
         ),
     ],
     decorator_list=[],
@@ -330,8 +331,8 @@ ndb_file_sqlalchemy_output_mod = Module(
         ndb_file_sqlalchemy_cls,
         Assign(
             targets=[Name(ctx=Store(), id="__all__")],
-            type_comment=None,
             value=List(ctx=Load(), elts=[set_value("File")]),
+            **maybe_type_comment
         ),
     ],
     type_ignores=[],
