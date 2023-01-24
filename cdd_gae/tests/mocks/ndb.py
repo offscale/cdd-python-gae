@@ -224,8 +224,19 @@ ndb_file_sqlalchemy_cls = ClassDef(
                 args=[Name(ctx=Load(), id="DateTime")],
                 func=Name(ctx=Load(), id="Column"),
                 keywords=[
-                    keyword(arg="auto_now", value=set_value(True)),
                     keyword(arg="index", value=set_value(False)),
+                    keyword(
+                        arg="onupdate",
+                        value=Call(
+                            func=Attribute(
+                                value=Name(id="func", ctx=Load()),
+                                attr="utc_timestamp",
+                                ctx=Load(),
+                            ),
+                            args=[],
+                            keywords=[],
+                        ),
+                    ),
                 ],
             ),
             **maybe_type_comment
@@ -245,8 +256,8 @@ ndb_file_sqlalchemy_cls = ClassDef(
                 args=[Name(ctx=Load(), id="Boolean")],
                 func=Name(ctx=Load(), id="Column"),
                 keywords=[
-                    keyword(arg="index", value=set_value(True)),
                     keyword(arg="default", value=set_value(False)),
+                    keyword(arg="index", value=set_value(True)),
                     keyword(arg="nullable", value=set_value(False)),
                 ],
             ),
@@ -278,6 +289,22 @@ ndb_file_sqlalchemy_cls = ClassDef(
                 keywords=[],
             ),
             **maybe_type_comment
+        ),
+        Assign(
+            targets=[Name(id="id", ctx=Store())],
+            value=Call(
+                func=Name(id="Column", ctx=Load()),
+                args=[Name(id="Integer", ctx=Load())],
+                keywords=[
+                    keyword(arg="primary_key", value=set_value(True)),
+                    keyword(
+                        arg="server_default",
+                        value=Call(
+                            func=Name(id="Identity", ctx=Load()), args=[], keywords=[]
+                        ),
+                    ),
+                ],
+            ),
         ),
     ],
     decorator_list=[],
