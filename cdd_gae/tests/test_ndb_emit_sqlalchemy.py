@@ -2,6 +2,7 @@
 Tests that NDB parses and then emits SQLalchemy
 """
 
+from copy import deepcopy
 from io import StringIO
 from unittest import TestCase
 from unittest.mock import patch
@@ -25,10 +26,12 @@ class TestNdbEmitSqlAlchemy(TestCase):
         """
         self.assertTrue(
             cmp_ast(
-                ndb_file_sqlalchemy_cls,
                 cdd.emit.sqlalchemy.sqlalchemy(
-                    ndb_file_ir, class_name=ndb_file_ir["name"], emit_repr=False
+                    deepcopy(ndb_file_ir),
+                    class_name=ndb_file_ir["name"],
+                    emit_repr=False,
                 ),
+                ndb_file_sqlalchemy_cls,
             )
         )
 

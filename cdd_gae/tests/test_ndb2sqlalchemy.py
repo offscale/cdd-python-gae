@@ -2,12 +2,14 @@
 Tests for NDB parsing/emitting
 """
 
-from ast import parse
+from ast import ImportFrom, parse
+from itertools import filterfalse
 from os import extsep, path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 
 from cdd.ast_utils import cmp_ast
+from cdd.pure_utils import rpartial
 from cdd.tests.utils_for_tests import unittest_main
 
 from cdd_gae.ndb2sqlalchemy import ndb2sqlalchemy
@@ -31,9 +33,9 @@ class TestNdb2SqlAlchemy(TestCase):
 
             ndb2sqlalchemy(input_file=input_file, output_file=output_file)
             with open(output_file, "rt") as f:
-                self.assertTrue(
-                    cmp_ast(ndb_file_sqlalchemy_output_mod, parse(f.read()))
-                )
+                gen = parse(f.read())
+            gen.body = list(filterfalse(rpartial(isinstance, ImportFrom), gen.body))[1:]
+            self.assertTrue(cmp_ast(ndb_file_sqlalchemy_output_mod, gen))
 
 
 unittest_main()

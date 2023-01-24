@@ -44,7 +44,20 @@ ndb_file_ir = {
                     "x_typ": {
                         "internal_type": "ndb.DateTimeProperty",
                         "sql": {
-                            "constraints": {"index": False, "onupdate": Call()},
+                            "constraints": {
+                                "index": False,
+                                "onupdate": Call(
+                                    func=Attribute(
+                                        value=Name(id="func", ctx=Load()),
+                                        attr="utc_timestamp",
+                                        ctx=Load(),
+                                    ),
+                                    args=[],
+                                    keywords=[],
+                                    expr=None,
+                                    expr_func=None,
+                                ),
+                            },
                             "type": "DateTime",
                         },
                     },

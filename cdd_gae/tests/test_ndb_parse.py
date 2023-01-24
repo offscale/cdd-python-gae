@@ -37,6 +37,13 @@ class TestNdbParse(TestCase):
         ir = ndb(ndb_file_cls_str)
 
         def dict_unroll(d):
+            """
+            Unroll a dictionary (i.e., flatten)
+
+            :type d: ```dict```
+
+            :rtype: ```dict```
+            """
             return (
                 {k: dict_unroll(get_value(v)) for k, v in d.items()}
                 if isinstance(d, dict)
