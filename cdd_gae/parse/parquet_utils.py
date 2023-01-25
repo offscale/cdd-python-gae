@@ -34,7 +34,18 @@ def parquet_type_to_param(field):
     """
     field_type = field.type
     if isinstance(field_type, TimestampType):
-        return {"typ": str(field_type)}
+        return {
+            "typ": "datetime",
+            "x_typ": {
+                "sql": dict(
+                    type="TIMESTAMP",
+                    type_extra={"unit": field_type.unit},
+                    **{"type_kwargs": {"timezone": True}}
+                    if bool(getattr(field_type, "unit", False))
+                    else {}
+                )
+            },
+        }
     elif isinstance(field_type, StructType):
         return {
             "typ": "dict",
@@ -67,11 +78,16 @@ def parquet_type_to_param(field):
             )
         }
     elif isinstance(field_type, DataType):
-        return {
+        param = {
             "typ": union_or_scalar(
                 tuple(map(lambda flattened: str(flattened.type), field.flatten()))
             )
         }
+        if param["typ"] == "int16":
+            param.update({"typ": "int", "x_typ": {"sql": {"type": "SmallInteger"}}})
+        elif param["typ"] == "int64":
+            param.update({"typ": "int", "x_typ": {"sql": {"type": "BigInteger"}}})
+        return param
     else:
         raise NotImplementedError(field_type)
 

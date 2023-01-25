@@ -47,9 +47,15 @@ class TestParseParquet(TestCase):
             {
                 "name": "example.parquet",
                 "params": OrderedDict(
-                    (("n_legs", {"typ": "int64"}), ("animal", {"typ": "string"}))
+                    (
+                        (
+                            "n_legs",
+                            {"typ": "int", "x_typ": {"sql": {"type": "BigInteger"}}},
+                        ),
+                        ("animal", {"typ": "string"}),
+                    )
                 ),
-                "return": None,
+                "returns": None,
             },
         )
 

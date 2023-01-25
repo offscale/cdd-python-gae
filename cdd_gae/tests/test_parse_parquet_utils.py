@@ -39,7 +39,7 @@ class TestParseParquetUtils(TestCase):
         )
         self.assertDictEqual(
             cdd_gae.parse.parquet_utils.parquet_type_to_param(table.column(0)),
-            {"typ": "int64"},
+            {"typ": "int", "x_typ": {"sql": {"type": "BigInteger"}}},
         )
         self.assertDictEqual(
             cdd_gae.parse.parquet_utils.parquet_type_to_param(
@@ -59,7 +59,15 @@ class TestParseParquetUtils(TestCase):
                 "ir": {
                     "name": "some_structure",
                     "params": OrderedDict(
-                        (("some_structure.value", {"typ": "int64"}),)
+                        (
+                            (
+                                "some_structure.value",
+                                {
+                                    "typ": "int",
+                                    "x_typ": {"sql": {"type": "BigInteger"}},
+                                },
+                            ),
+                        )
                     ),
                     "returns": None,
                 },
@@ -70,7 +78,7 @@ class TestParseParquetUtils(TestCase):
             cdd_gae.parse.parquet_utils.parquet_type_to_param(
                 pa.field("value", pa.int64(), nullable=False)
             ),
-            {"typ": "int64"},
+            {"typ": "int", "x_typ": {"sql": {"type": "BigInteger"}}},
         )
         self.assertDictEqual(
             cdd_gae.parse.parquet_utils.parquet_type_to_param(
@@ -84,7 +92,16 @@ class TestParseParquetUtils(TestCase):
                     "the_time", pa.timestamp("s", tz="America/New_York"), nullable=False
                 )
             ),
-            {"typ": "timestamp[s, tz=America/New_York]"},
+            {
+                "typ": "datetime",
+                "x_typ": {
+                    "sql": {
+                        "type": "TIMESTAMP",
+                        "type_extra": {"unit": "s"},
+                        "type_kwargs": {"timezone": True},
+                    }
+                },
+            },
         )
 
 
