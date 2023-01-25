@@ -42,7 +42,10 @@ def parquet_type_to_param(field):
                 "name": field.name,
                 "params": OrderedDict(
                     map(
-                        lambda flattened: (flattened.name, str(flattened.type)),
+                        lambda flattened: (
+                            flattened.name,
+                            parquet_type_to_param(flattened),
+                        ),
                         field.flatten(),
                     )
                 ),

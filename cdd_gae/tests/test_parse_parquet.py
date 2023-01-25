@@ -14,9 +14,9 @@ import cdd_gae.parse.parquet
 mocks_dir = path.join(path.dirname(__file__), "mocks")
 
 
-class TestParquetParse(TestCase):
+class TestParseParquet(TestCase):
     """
-    Tests whether ndb classes are parsed correctly
+    Tests whether Parquet files are parsed correctly
     """
 
     @classmethod
