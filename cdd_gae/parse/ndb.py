@@ -8,12 +8,15 @@ from collections import OrderedDict
 from cdd_gae.parse.ndb_utils import ndb_parse_assign
 
 
-def ndb(source):
+def ndb(source, name):
     """
     Parse NDB into the cdd IR
 
     :param source: Python source code for NDB class
     :type source: ```str```
+
+    :param name: name
+    :type name: ```Optional[str]```
 
     :return: a dictionary of form
         {  "name": Optional[str],
@@ -27,15 +30,18 @@ def ndb(source):
     assert isinstance(source, str)
     mod = parse(source)
     assert isinstance(mod.body[0], ClassDef)
-    return ndb_class_def(mod.body[0])
+    return ndb_class_def(mod.body[0], name)
 
 
-def ndb_class_def(ndb_cls_def):
+def ndb_class_def(ndb_cls_def, name=None):
     """
     Parse NDB—from ast.ClassDef—into the cdd IR
 
     :param ndb_cls_def: `ast.ClassDef` of NDB class
     :type ndb_cls_def: ```ast.ClassDef```
+
+    :param name: name
+    :type name: ```Optional[str]```
 
     :return: a dictionary of form
         {  "name": Optional[str],
@@ -48,7 +54,7 @@ def ndb_class_def(ndb_cls_def):
     """
     assert isinstance(ndb_cls_def, ClassDef)
     return {
-        "name": ndb_cls_def.name,
+        "name": ndb_cls_def.name if name is None else name,
         "doc": get_docstring(ndb_cls_def) or "",
         "params": OrderedDict(
             (node.targets[0].id, ndb_parse_assign(node))

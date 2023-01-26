@@ -65,75 +65,48 @@ Traverse the AST for ndb and webapp2.
 ## CLI for this project
 
     $ python -m cdd_gae --help
-    usage: python -m cdd_gae [-h] [--version]
-                             {ndb2sqlalchemy,ndb2sqlalchemy_migrator,parquet2sqlalchemy,webapp2_to_fastapi}
-                             ...
+    usage: python -m cdd_gae [-h] [--version] {gen,ndb2sqlalchemy_migrator} ...
     
     Migration tooling from Google App Engine (webapp2, ndb) to python-cdd
     supported (FastAPI, SQLalchemy).
     
     positional arguments:
-      {ndb2sqlalchemy,ndb2sqlalchemy_migrator,parquet2sqlalchemy,webapp2_to_fastapi}
-        ndb2sqlalchemy      Parse NDB emit SQLalchemy
+      {gen,ndb2sqlalchemy_migrator}
+        gen                 Go from cdd_gae supported parse type to cdd supported
+                            emit type
         ndb2sqlalchemy_migrator
                             Create migration scripts from NDB to SQLalchemy
-        parquet2sqlalchemy  Parse Parquet emit SQLalchemy
-        webapp2_to_fastapi  Parse WebApp2 emit FastAPI
     
     options:
       -h, --help            show this help message and exit
       --version             show program's version number and exit
 
-### `ndb2sqlalchemy` (`webapp2_to_fastapi` takes same args)
+### `python -m cdd_gae gen`
 
-    $ python -m cdd_gae ndb2sqlalchemy --help
-    
-    usage: python -m cdd_gae ndb2sqlalchemy [-h] -i INPUT_FILE -o OUTPUT_FILE
-                                            [--dry-run]
+    $ python -m cdd_gae gen --help
+    usage: python -m cdd_gae gen [-h] [--parse {ndb,parquet,webapp2}] --emit
+                                 {argparse,class,function,json_schema,pydantic,sqlalchemy,sqlalchemy_table}
+                                 -i INPUT_FILE -o OUTPUT_FILE [--name NAME]
+                                 [--dry-run]
     
     options:
       -h, --help            show this help message and exit
+      --parse {ndb,parquet,webapp2}
+                            What type the input is.
+      --emit {argparse,class,function,json_schema,pydantic,sqlalchemy,sqlalchemy_table}
+                            What type to generate.
       -i INPUT_FILE, --input-file INPUT_FILE
                             Python file to parse NDB `class`es out of
       -o OUTPUT_FILE, --output-file OUTPUT_FILE
                             Empty file to generate SQLalchemy classes to
+      --name NAME           Name of function/class to emit, defaults to inferring
+                            from filename
       --dry-run             Show what would be created; don't actually write to
                             the filesystem.
 
-### `parquet2sqlalchemy` (`webapp2_to_fastapi` takes same args)
+### `python -m cdd_gae ndb2sqlalchemy_migrator`
 
-    $ python -m cdd_gae parquet2sqlalchemy -h
-    usage: python -m cdd_gae parquet2sqlalchemy [-h] -i INPUT_FILE -o OUTPUT_FILE
-                                                [--dry-run]
-    
-    options:
-      -h, --help            show this help message and exit
-      -i INPUT_FILE, --input-file INPUT_FILE
-                            Parquet filepath
-      -o OUTPUT_FILE, --output-file OUTPUT_FILE
-                            Empty file to generate SQLalchemy classes to
-      --dry-run             Show what would be created; don't actually write to
-                            the filesystem.
-
-### `webapp2_to_fastapi` (`ndb2sqlalchemy` takes same args)
-
-    $ python -m cdd_gae webapp2_to_fastapi --help
-    
-    usage: python -m cdd_gae webapp2_to_fastapi [-h] -i INPUT_FILE -o OUTPUT_FILE
-                                                [--dry-run]
-    
-    options:
-      -h, --help            show this help message and exit
-      -i INPUT_FILE, --input-file INPUT_FILE
-                            Python file to parse WebApp2 `class`es out of
-      -o OUTPUT_FILE, --output-file OUTPUT_FILE
-                            Empty file to generate FastAPI functions to
-      --dry-run             Show what would be created; don't actually write to
-                            the filesystem.
-
-### `python -m cdd_gae ndb2sqlalchemy_migrator --help`
-
-    $ ndb2sqlalchemy_migrator
+    $ python -m cdd_gae ndb2sqlalchemy_migrator --help
     usage: python -m cdd_gae ndb2sqlalchemy_migrator [-h] --ndb-file NDB_FILE
                                                      --sqlalchemy-file
                                                      SQLALCHEMY_FILE
@@ -143,7 +116,7 @@ Traverse the AST for ndb and webapp2.
                                                      SQLALCHEMY_MOD_TO_IMPORT -o
                                                      OUTPUT_FOLDER [--dry-run]
     
-    optional arguments:
+    options:
       -h, --help            show this help message and exit
       --ndb-file NDB_FILE   Python file containing the NDB `class`es
       --sqlalchemy-file SQLALCHEMY_FILE
