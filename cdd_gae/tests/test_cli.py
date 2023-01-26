@@ -5,16 +5,13 @@ from argparse import ArgumentParser
 from importlib.machinery import SourceFileLoader
 from importlib.util import module_from_spec, spec_from_loader
 from os.path import extsep
-from tempfile import TemporaryDirectory
 from unittest import TestCase
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from cdd import __description__, __version__
 from cdd.__main__ import _build_parser
 from cdd.pure_utils import PY3_8
 from cdd.tests.utils_for_tests import run_cli_test, unittest_main
-
-from cdd_gae.__main__ import main
 
 
 class TestCli(TestCase):
