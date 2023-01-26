@@ -9,6 +9,7 @@ from os import path
 
 import cdd_gae.ndb2sqlalchemy
 import cdd_gae.ndb2sqlalchemy_migrator
+import cdd_gae.parquet2sqlalchemy
 import cdd_gae.webapp2_to_fastapi
 from cdd_gae import __description__, __version__
 
@@ -99,6 +100,31 @@ def _build_parser():
     )
 
     ######################
+    # parquet2sqlalchemy #
+    ######################
+    parquet2sqlalchemy_parser = subparsers.add_parser(
+        "parquet2sqlalchemy",
+        help="Parse Parquet emit SQLalchemy",
+    )
+    parquet2sqlalchemy_parser.add_argument(
+        "-i",
+        "--input-file",
+        help="Parquet filepath",
+        required=True,
+    )
+    parquet2sqlalchemy_parser.add_argument(
+        "-o",
+        "--output-file",
+        help="Empty file to generate SQLalchemy classes to",
+        required=True,
+    )
+    parquet2sqlalchemy_parser.add_argument(
+        "--dry-run",
+        help="Show what would be created; don't actually write to the filesystem.",
+        action="store_true",
+    )
+
+    ######################
     # webapp2_to_fastapi #
     ######################
     webapp2_to_fastapi_parser = subparsers.add_parser(
@@ -147,13 +173,17 @@ def main(cli_argv=None, return_args=False):
 
     command = args.command
     args_dict = {k: v for k, v in vars(args).items() if k != "command"}
-    if command in frozenset(("ndb2sqlalchemy", "webapp2_to_fastapi")):
+    if command in frozenset(
+        ("ndb2sqlalchemy", "parquet2sqlalchemy", "webapp2_to_fastapi")
+    ):
         require_file_existent(_parser, args_dict["input_file"], name="input-file")
 
         return (
-            cdd_gae.webapp2_to_fastapi.webapp2_to_fastapi_file
-            if command == "webapp2_to_fastapi"
-            else cdd_gae.ndb2sqlalchemy.ndb2sqlalchemy
+            {
+                "ndb2sqlalchemy": cdd_gae.ndb2sqlalchemy.ndb2sqlalchemy,
+                "parquet2sqlalchemy": cdd_gae.parquet2sqlalchemy.parquet2sqlalchemy,
+                "webapp2_to_fastapi": cdd_gae.webapp2_to_fastapi.webapp2_to_fastapi_file,
+            }[command]
         )(**args_dict)
     else:
         assert command == "ndb2sqlalchemy_migrator"

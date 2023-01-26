@@ -16,6 +16,8 @@ Migration tooling from Google App Engine (webapp2, ndb) to python-cdd supported 
 Public SDK works with filenames, source code, and even in memory constructs (e.g., as imported into your REPL).
 CLI available also.
 
+Note: Parquet files are supported as it takes too long to run NDB queries to batch acquire / batch insert into SQL.
+
 ## Install package
 
 ### PyPi
@@ -64,20 +66,21 @@ Traverse the AST for ndb and webapp2.
 
     $ python -m cdd_gae --help
     usage: python -m cdd_gae [-h] [--version]
-                             {ndb2sqlalchemy,ndb2sqlalchemy_migrator,webapp2_to_fastapi}
+                             {ndb2sqlalchemy,ndb2sqlalchemy_migrator,parquet2sqlalchemy,webapp2_to_fastapi}
                              ...
     
     Migration tooling from Google App Engine (webapp2, ndb) to python-cdd
     supported (FastAPI, SQLalchemy).
     
     positional arguments:
-      {ndb2sqlalchemy,ndb2sqlalchemy_migrator,webapp2_to_fastapi}
+      {ndb2sqlalchemy,ndb2sqlalchemy_migrator,parquet2sqlalchemy,webapp2_to_fastapi}
         ndb2sqlalchemy      Parse NDB emit SQLalchemy
         ndb2sqlalchemy_migrator
                             Create migration scripts from NDB to SQLalchemy
+        parquet2sqlalchemy  Parse Parquet emit SQLalchemy
         webapp2_to_fastapi  Parse WebApp2 emit FastAPI
     
-    optional arguments:
+    options:
       -h, --help            show this help message and exit
       --version             show program's version number and exit
 
@@ -92,6 +95,21 @@ Traverse the AST for ndb and webapp2.
       -h, --help            show this help message and exit
       -i INPUT_FILE, --input-file INPUT_FILE
                             Python file to parse NDB `class`es out of
+      -o OUTPUT_FILE, --output-file OUTPUT_FILE
+                            Empty file to generate SQLalchemy classes to
+      --dry-run             Show what would be created; don't actually write to
+                            the filesystem.
+
+### `parquet2sqlalchemy` (`webapp2_to_fastapi` takes same args)
+
+    $ python -m cdd_gae parquet2sqlalchemy -h
+    usage: python -m cdd_gae parquet2sqlalchemy [-h] -i INPUT_FILE -o OUTPUT_FILE
+                                                [--dry-run]
+    
+    options:
+      -h, --help            show this help message and exit
+      -i INPUT_FILE, --input-file INPUT_FILE
+                            Parquet filepath
       -o OUTPUT_FILE, --output-file OUTPUT_FILE
                             Empty file to generate SQLalchemy classes to
       --dry-run             Show what would be created; don't actually write to
