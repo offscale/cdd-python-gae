@@ -63,38 +63,5 @@ class TestCli(TestCase):
             "command",
         )
 
-    def test_version_args(self):
-        """Tests that NotImplemented is raised"""
-        self.assertDictEqual(
-            {
-                "command": "ndb2sqlalchemy",
-                "input_file": __file__,
-                "output_file": "nonexistent.py",
-                "dry_run": False,
-            },
-            vars(
-                main(
-                    cli_argv=["ndb2sqlalchemy", "-i", __file__, "-o", "nonexistent.py"],
-                    return_args=True,
-                )
-            ),
-        )
-
-    def test_main_is_called_correctly(self) -> None:
-        """Tests that `main` is called correctly"""
-        with TemporaryDirectory() as tmpdir, patch(
-            "cdd_gae.ndb2sqlalchemy.ndb2sqlalchemy", new_callable=MagicMock
-        ) as func:
-            output_file = os.path.join(tmpdir, "out{extsep}py".format(extsep=extsep))
-            main(
-                cli_argv=["ndb2sqlalchemy", "-i", __file__, "-o", output_file],
-            )
-            self.assertTrue(func.called)
-            self.assertEqual(func.call_count, 1)
-            self.assertEqual(
-                func.call_args,
-                call(input_file=__file__, output_file=output_file, dry_run=False),
-            )
-
 
 unittest_main()

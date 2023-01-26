@@ -12,9 +12,7 @@ import cdd.gen_utils
 import cdd.source_transformer
 from cdd.__main__ import parse_emit_types
 
-import cdd_gae.ndb2sqlalchemy
 import cdd_gae.ndb2sqlalchemy_migrator
-import cdd_gae.parquet2sqlalchemy
 import cdd_gae.parse.ndb
 import cdd_gae.parse.parquet
 import cdd_gae.webapp2_to_fastapi

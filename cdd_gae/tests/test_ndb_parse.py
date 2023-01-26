@@ -34,7 +34,7 @@ class TestNdbParse(TestCase):
         """
         Tests that mock IR matches what `ndb_class_def` creates
         """
-        ir = ndb(ndb_file_cls_str)
+        ir = ndb(ndb_file_cls_str, "File")
 
         def dict_unroll(d):
             """
