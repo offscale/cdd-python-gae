@@ -17,6 +17,7 @@ import cdd_gae.parse.ndb
 import cdd_gae.parse.parquet
 import cdd_gae.webapp2_to_fastapi
 from cdd_gae import __description__, __version__
+from cdd_gae.parquet_to_table import parquet_to_table
 
 
 def _build_parser():
@@ -120,6 +121,30 @@ def _build_parser():
         action="store_true",
     )
 
+    #################
+    # parquet2table #
+    #################
+    parquet2table_parser = subparsers.add_parser(
+        "parquet2table",
+        help="Go from Parquet file to Postgres table (with more efficient `COPY FROM`)",
+    )
+    parquet2table_parser.add_argument(
+        "-i", "--input-file", help="Parquet file", required=True, dest="filename"
+    )
+    parquet2table_parser.add_argument(
+        "--database-uri",
+        help="Database connection string. Defaults to `RDBMS_URI` in your env vars.",
+    )
+    parquet2table_parser.add_argument(
+        "--table-name",
+        help="Table name to use, else use penultimate underscore surrounding word form filename basename",
+    )
+    parquet2table_parser.add_argument(
+        "--dry-run",
+        help="Show what would be created; don't actually write to the filesystem.",
+        action="store_true",
+    )
+
     return parser
 
 
@@ -173,7 +198,15 @@ def main(cli_argv=None, return_args=False):
                 or (
                     getattr(
                         import_module(
-                            ".".join(("cdd", "emit", args_dict["emit_name"]))
+                            ".".join(
+                                (
+                                    "cdd",
+                                    "emit",
+                                    {"sqlalchemy_table": "sqlalchemy"}.get(
+                                        args_dict["emit_name"], args_dict["emit_name"]
+                                    ),
+                                )
+                            )
                         ),
                         args_dict["emit_name"],
                     )(
@@ -200,7 +233,8 @@ def main(cli_argv=None, return_args=False):
         )
         with open(args_dict["output_file"], "wt") as f:
             f.write(cdd.source_transformer.to_code(mod))
-
+    elif command == "parquet2table":
+        parquet_to_table(**args_dict)
     else:
         assert command == "ndb2sqlalchemy_migrator"
         return cdd_gae.ndb2sqlalchemy_migrator.ndb2sqlalchemy_migrator_folder(

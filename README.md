@@ -65,21 +65,25 @@ Traverse the AST for ndb and webapp2.
 ## CLI for this project
 
     $ python -m cdd_gae --help
-    usage: python -m cdd_gae [-h] [--version] {gen,ndb2sqlalchemy_migrator} ...
-    
-    Migration tooling from Google App Engine (webapp2, ndb) to python-cdd
-    supported (FastAPI, SQLalchemy).
-    
-    positional arguments:
-      {gen,ndb2sqlalchemy_migrator}
-        gen                 Go from cdd_gae supported parse type to cdd supported
-                            emit type
-        ndb2sqlalchemy_migrator
-                            Create migration scripts from NDB to SQLalchemy
+    usage: python -m cdd_gae gen [-h] [--parse {ndb,parquet,webapp2}] --emit
+                                 {argparse,class,function,json_schema,pydantic,sqlalchemy,sqlalchemy_table}
+                                 -i INPUT_FILE -o OUTPUT_FILE [--name NAME]
+                                 [--dry-run]
     
     options:
       -h, --help            show this help message and exit
-      --version             show program's version number and exit
+      --parse {ndb,parquet,webapp2}
+                            What type the input is.
+      --emit {argparse,class,function,json_schema,pydantic,sqlalchemy,sqlalchemy_table}
+                            What type to generate.
+      -i INPUT_FILE, --input-file INPUT_FILE
+                            Python file to parse NDB `class`es out of
+      -o OUTPUT_FILE, --output-file OUTPUT_FILE
+                            Empty file to generate SQLalchemy classes to
+      --name NAME           Name of function/class to emit, defaults to inferring
+                            from filename
+      --dry-run             Show what would be created; don't actually write to
+                            the filesystem.
 
 ### `python -m cdd_gae gen`
 
@@ -132,6 +136,26 @@ Traverse the AST for ndb and webapp2.
       --dry-run             Show what would be created; don't actually write to
                             the filesystem.
 
+### `python -m cdd_gae gen parquet2table`
+
+    $ python -m cdd_gae parquet2table --help
+    usage: python -m cdd_gae parquet2table [-h] -i FILENAME
+                                           [--database-uri DATABASE_URI]
+                                           [--table-name TABLE_NAME] [--dry-run]
+    
+    options:
+      -h, --help            show this help message and exit
+      -i FILENAME, --input-file FILENAME
+                            Parquet file
+      --database-uri DATABASE_URI
+                            Database connection string. Defaults to `RDBMS_URI` in
+                            your env vars.
+      --table-name TABLE_NAME
+                            Table name to use, else use penultimate underscore
+                            surrounding word form filename basename
+      --dry-run             Show what would be created; don't actually write to
+                            the filesystem.
+
 ---
 
 ## Data migration
@@ -163,6 +187,55 @@ gsutil ls 'gs://'"$GOOGLE_BUCKET_NAME"'/**/all_namespaces/kind_*' | python3 -c '
 ```sh
 for entity in kind0 kind1; do
   bq extract --location="$GOOGLE_LOCATION" --destination_format='PARQUET' "$NAMESPACE"'.kind_'"$entity" 'gs://'"$GOOGLE_BUCKET_NAME"'/'"$entity"'/*' &
+done
+```
+
+###  Download and parse the Parquet files, then insert into SQL
+Download from Google Cloud Bucket:
+```sh
+# TODO
+```
+
+Parse the parquet files into SQLalchemy:
+```bash
+#!/usr/bin/env bash
+
+module_dir='parquet_to_postgres'
+mkdir -p "$module_dir"
+main_py="$module_dir"'/__main__.py'
+printf '%s\n' \
+       'from os import environ' \
+       'from sqlalchemy import create_engine' '' '' \
+       'if __name__ == "__main__":' \
+       '    engine = create_engine(environ["RDBMS_URI"])' \
+       '    print("Creating tables")' \
+       '    Base.metadata.create_all(engine)' > "$main_py"
+printf '%s\n' \
+       'from sqlalchemy.orm import declarative_base' '' \
+       'Base = declarative_base()' \
+       '__all__ = ["Base"]' > "$module_dir"'/__init__.py'
+
+declare -a extra_imports=()
+
+for parquet_file in 2023-01-18_0_kind0_000000000000 2023-01-18_0_kind1_000000000000; do
+  IFS='_'; read -r _ _ table_name _ _ _ <<< "${parquet_file//+(*\/|.*)}"
+  py_file="$module_dir"'/'"$table_name"'.py'
+  python -m cdd_gae gen --parse 'parquet' --emit 'sqlalchemy' -i "$parquet_file" -o "$py_file" --name "$table_name"
+  echo -e 'from . import Base' | cat - "$py_file" | sponge "$py_file"
+  printf -v table_import 'from %s.%s import %s' "$module_dir" "$table_name" "$table_name"
+  extra_imports+=("$table_import")
+done
+
+extra_imports+=('from . import Base')
+
+( IFS=$'\n'; echo -e "${extra_imports[*]}" ) | cat - "$main_py" | sponge "$main_py"
+```
+
+Finally, create your tables concurrently with this; replacing `RDBMS_URI` with your database connection string:
+```sh
+export RDBMS_URI='postgresql://username:password@host/database'
+for parquet_file in 2023-01-18_0_kind0_000000000000 2023-01-18_0_kind1_000000000000; do
+  python -m cdd_gae parquet2table -i "$parquet_file" &
 done
 ```
 
