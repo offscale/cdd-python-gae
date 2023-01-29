@@ -17,12 +17,12 @@ from sqlalchemy import create_engine
 
 def parse_col(col):
     """
-    Parse column into something SQLalchemy can deal with
+    Parse column into something `COPY FROM` can deal with on a CSV read
 
     :param col: Column
     :type col: ```Any```
 
-    :return: A variant of the input that SQLalchemy can deal with
+    :return: A variant of the input that `COPY FROM` can deal with on a CSV read
     :rtype: ```Any```
     """
     if isinstance(col, (str, complex, int, bytes, set, frozenset, type(None))):
@@ -31,8 +31,6 @@ def parse_col(col):
         return int(col) if col.is_integer() else col
     elif isinstance(col, (list, tuple, np.ndarray)):
         if len(col) == 0:
-            # return 'array[]::varchar[]'
-            # return dumps('NULL')
             return "{}"
         return col
     elif isinstance(col, dict):
@@ -60,6 +58,8 @@ def psql_insert_copy(table, conn, keys, data_iter):
     with dbapi_conn.cursor() as cur:
         s_buf = StringIO()
         writer = csv.writer(s_buf)
+
+        # Note: The `[1:]` selection here and in `columns` below is to omit the array index
         data_iter = map(lambda record: tuple(map(parse_col, record[1:])), data_iter)
         writer.writerows(data_iter)
         s_buf.seek(0)
@@ -70,9 +70,6 @@ def psql_insert_copy(table, conn, keys, data_iter):
         else:
             table_name = table.name
 
-        print("s_buf:")
-        print(s_buf.read())
-        s_buf.seek(0)
         sql = 'COPY "{}" ({}) FROM STDIN WITH CSV'.format(table_name, columns)
         cur.copy_expert(sql=sql, file=s_buf)
 
@@ -108,7 +105,7 @@ def parquet_to_table(filename, table_name=None, database_uri=None, dry_run=False
             lambda df: df.to_sql(
                 table_name, con=engine, if_exists="append", method=psql_insert_copy
             ),
-            map(methodcaller("to_pandas"), parquet_file.iter_batches(batch_size=1)),
+            map(methodcaller("to_pandas"), parquet_file.iter_batches()),
         ),
         maxlen=0,
     )

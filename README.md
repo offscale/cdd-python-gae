@@ -196,7 +196,7 @@ Download from Google Cloud Bucket:
 # TODO
 ```
 
-Parse the parquet files into SQLalchemy:
+Use this script to create SQLalchemy files from Parquet files:
 ```bash
 #!/usr/bin/env bash
 
@@ -231,7 +231,9 @@ extra_imports+=('from . import Base')
 ( IFS=$'\n'; echo -e "${extra_imports[*]}" ) | cat - "$main_py" | sponge "$main_py"
 ```
 
-Finally, create your tables concurrently with this; replacing `RDBMS_URI` with your database connection string:
+Then run `python -m "$module_dir"` to execute the `CREATE TABLE`s.
+
+Finally, to batch insert into your tables concurrently; replace `RDBMS_URI` with your database connection string:
 ```sh
 export RDBMS_URI='postgresql://username:password@host/database'
 for parquet_file in 2023-01-18_0_kind0_000000000000 2023-01-18_0_kind1_000000000000; do
