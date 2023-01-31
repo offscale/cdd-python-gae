@@ -193,7 +193,7 @@ done
 ###  Download and parse the Parquet files, then insert into SQL
 Download from Google Cloud Bucket:
 ```sh
-# TODO
+gcloud storage cp -R 'gs://'"$GOOGLE_BUCKET_NAME"'/folder/*' '/data'
 ```
 
 Use this script to create SQLalchemy files from Parquet files:
@@ -239,6 +239,10 @@ export RDBMS_URI='postgresql://username:password@host/database'
 for parquet_file in 2023-01-18_0_kind0_000000000000 2023-01-18_0_kind1_000000000000; do
   python -m cdd_gae parquet2table -i "$parquet_file" &
 done
+# Or with the concurrent `fd`
+# fd -tf . '/data' -E 'exclude_tbl' -x python -m cdd_gae parquet2table -i
+# Or with explicit table_name from parent folder's basename:
+# fd -tf . '/data' -E 'exclude_tbl' -x bash -c 'python -m cdd_gae parquet2table --table-name "$(basename ${0%/*})" -i "$0"' {}
 ```
 
 ---
