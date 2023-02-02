@@ -4,6 +4,7 @@ Tests for Parquet parsing
 from collections import OrderedDict
 from unittest import TestCase
 
+import numpy as np
 import pyarrow as pa
 from cdd.tests.utils_for_tests import unittest_main
 
@@ -27,6 +28,7 @@ class TestParseParquetUtils(TestCase):
         table = pa.table(
             {
                 "n_legs": [2, 2, 4, 4, 5, 100],
+                "heights": [1.7, 1.2, 1.7, 1.9, 1.3, 1.2],
                 "animal": [
                     "Flamingo",
                     "Parrot",
@@ -35,11 +37,21 @@ class TestParseParquetUtils(TestCase):
                     "Brittle stars",
                     "Centipede",
                 ],
+                "n_heads": np.arange(6, dtype=np.int16),
             }
+        )
+
+        self.assertDictEqual(
+            cdd_gae.parse.parquet_utils.parquet_type_to_param(table.column(1)),
+            {"typ": "float", "x_typ": {"sql": {"type": "float"}}},
         )
         self.assertDictEqual(
             cdd_gae.parse.parquet_utils.parquet_type_to_param(table.column(0)),
             {"typ": "int", "x_typ": {"sql": {"type": "BigInteger"}}},
+        )
+        self.assertDictEqual(
+            cdd_gae.parse.parquet_utils.parquet_type_to_param(table.column(3)),
+            {"typ": "int", "x_typ": {"sql": {"type": "SmallInteger"}}},
         )
         self.assertDictEqual(
             cdd_gae.parse.parquet_utils.parquet_type_to_param(
