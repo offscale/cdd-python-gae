@@ -4,6 +4,7 @@ Tests for Parquet parsing
 from collections import OrderedDict
 from unittest import TestCase
 
+import numpy as np
 import pyarrow as pa
 import numpy as np
 from cdd.tests.utils_for_tests import unittest_main
