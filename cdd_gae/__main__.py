@@ -8,8 +8,8 @@ from argparse import ArgumentParser
 from importlib import import_module
 from os import path
 
-import cdd.gen_utils
-import cdd.source_transformer
+import cdd.compound.gen_utils
+import cdd.shared.source_transformer
 from cdd.__main__ import parse_emit_types
 
 import cdd_gae.ndb2sqlalchemy_migrator

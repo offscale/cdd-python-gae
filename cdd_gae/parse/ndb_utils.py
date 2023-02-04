@@ -2,7 +2,7 @@
 Utils for ndb.py
 """
 
-from cdd.ast_utils import get_value
+from cdd.shared.ast_utils import get_value
 
 from cdd_gae.ndb2sqlalchemy_utils import ndb_to_sqlalchemy_keyword
 

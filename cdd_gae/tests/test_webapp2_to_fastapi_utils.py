@@ -6,7 +6,7 @@ from ast import Attribute, Call, Expr, Load, Module, Name
 from copy import deepcopy
 from unittest import TestCase
 
-from cdd.ast_utils import cmp_ast, set_value
+from cdd.shared.ast_utils import cmp_ast, set_value
 from cdd.tests.utils_for_tests import unittest_main
 
 from cdd_gae.webapp2_to_fastapi_utils import RewriteResponse

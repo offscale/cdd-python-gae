@@ -6,9 +6,9 @@ from ast import parse
 from collections import OrderedDict
 from unittest import TestCase
 
-from cdd.ast_utils import cmp_ast, get_value
-from cdd.pure_utils import remove_whitespace_comments
-from cdd.source_transformer import to_code
+from cdd.shared.ast_utils import cmp_ast, get_value
+from cdd.shared.pure_utils import remove_whitespace_comments
+from cdd.shared.source_transformer import to_code
 from cdd.tests.utils_for_tests import unittest_main
 
 from cdd_gae.parse.ndb import ndb

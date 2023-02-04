@@ -9,9 +9,9 @@ from itertools import filterfalse
 from operator import attrgetter, contains
 from os import listdir, path
 
-import cdd.parse.sqlalchemy
-from cdd.pure_utils import rpartial
-from cdd.source_transformer import to_code
+import cdd.sqlalchemy.parse
+from cdd.shared.pure_utils import rpartial
+from cdd.shared.source_transformer import to_code
 
 from cdd_gae.ndb_sqlalchemy_migrator_utils import generate_ndb_to_sqlalchemy_mod
 
@@ -43,7 +43,7 @@ def generate_migration_file(
     """
     mod = generate_ndb_to_sqlalchemy_mod(
         name=ndb_class_def.name,
-        fields=cdd.parse.sqlalchemy.sqlalchemy(sqlalchemy_class_def)["params"].keys(),
+        fields=cdd.sqlalchemy.parse.sqlalchemy(sqlalchemy_class_def)["params"].keys(),
         ndb_mod_to_import=ndb_mod_to_import,
         sqlalchemy_mod_to_import=sqlalchemy_mod_to_import,
     )

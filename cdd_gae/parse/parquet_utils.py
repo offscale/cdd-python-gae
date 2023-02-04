@@ -88,7 +88,7 @@ def parquet_type_to_param(field):
         elif param["typ"] == "int64":
             param.update({"typ": "int", "x_typ": {"sql": {"type": "BigInteger"}}})
         elif param["typ"] == "double":
-            param.update({"typ": "float", "x_typ": {"sql": {"type": "float"}}})
+            param.update({"typ": "float", "x_typ": {"sql": {"type": "Float"}}})
         return param
     else:
         raise NotImplementedError(field_type)

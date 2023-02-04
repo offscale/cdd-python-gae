@@ -23,9 +23,9 @@ from functools import partial
 from itertools import chain
 from operator import attrgetter, itemgetter
 
-from cdd.ast_utils import get_value, maybe_type_comment, set_value
-from cdd.pure_utils import rpartial
-from cdd.source_transformer import to_code
+from cdd.shared.ast_utils import get_value, maybe_type_comment, set_value
+from cdd.shared.pure_utils import rpartial
+from cdd.shared.source_transformer import to_code
 
 from cdd_gae.webapp2_to_fastapi_utils import generate_route
 
