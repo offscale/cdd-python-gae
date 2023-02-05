@@ -186,7 +186,7 @@ def main(cli_argv=None, return_args=False):
             ]
         )(args_dict["input_file"], name=args_dict["name"])
         global__all__ = []
-        mod = cdd.gen_utils.gen_module(
+        mod = cdd.compound.gen_utils.gen_module(
             decorator_list=[],
             emit_and_infer_imports=True,
             emit_call=True,
@@ -213,7 +213,7 @@ def main(cli_argv=None, return_args=False):
                         ir,
                         emit_default_doc=True,
                         word_wrap=True,
-                        **cdd.gen_utils.get_emit_kwarg(
+                        **cdd.compound.gen_utils.get_emit_kwarg(
                             decorator_list=[],
                             emit_call=True,
                             emit_name=args_dict["emit_name"],
