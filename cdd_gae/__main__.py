@@ -201,10 +201,10 @@ def main(cli_argv=None, return_args=False):
                             ".".join(
                                 (
                                     "cdd",
-                                    "emit",
                                     {"sqlalchemy_table": "sqlalchemy"}.get(
                                         args_dict["emit_name"], args_dict["emit_name"]
                                     ),
+                                    "emit",
                                 )
                             )
                         ),
@@ -232,7 +232,7 @@ def main(cli_argv=None, return_args=False):
             global__all__=global__all__,
         )
         with open(args_dict["output_file"], "wt") as f:
-            f.write(cdd.source_transformer.to_code(mod))
+            f.write(cdd.shared.source_transformer.to_code(mod))
     elif command == "parquet2table":
         parquet_to_table(**args_dict)
     else:
