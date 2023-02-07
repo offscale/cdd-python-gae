@@ -50,10 +50,10 @@ def generate_ndb_to_sqlalchemy_mod(
             ImportFrom(module="os", names=[alias(name="environ", asname="environ")], level=0),
             ImportFrom(module="google.cloud", names=[alias(name="ndb", asname="ndb")], level=0),
             ImportFrom(
-                module="sqlalchemy", names=[alias(name="create_engine", asname="environ")], level=0
+                module="sqlalchemy", names=[alias(name="create_engine", asname="create_engine")], level=0
             ),
             ImportFrom(
-                module="sqlalchemy.orm", names=[alias(name="sessionmaker", asname="environ")], level=0
+                module="sqlalchemy.orm", names=[alias(name="sessionmaker", asname="sessionmaker")], level=0
             ),
             ImportFrom(
                 module=ndb_mod_to_import,

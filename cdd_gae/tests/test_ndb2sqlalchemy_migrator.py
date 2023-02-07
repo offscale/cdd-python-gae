@@ -70,8 +70,8 @@ class Hero(Base):
             output = file.read()
         expected_output = """from os import environ as environ
 from google.cloud import ndb as ndb
-from sqlalchemy import create_engine as environ
-from sqlalchemy.orm import sessionmaker as environ
+from sqlalchemy import create_engine as create_engine
+from sqlalchemy.orm import sessionmaker as sessionmaker
 from example_ndb import Person as NDB_Person
 from example_sql import Person as SQL_Person
 if __name__ == '__main__':
