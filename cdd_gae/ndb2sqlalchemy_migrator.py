@@ -41,9 +41,10 @@ def generate_migration_file(
     :param output_file: Output file
     :type output_file: ```str```
     """
+    fields = cdd.sqlalchemy.parse.sqlalchemy(sqlalchemy_class_def)
     mod = generate_ndb_to_sqlalchemy_mod(
         name=ndb_class_def.name,
-        fields=cdd.sqlalchemy.parse.sqlalchemy(sqlalchemy_class_def)["params"].keys(),
+        fields=fields["params"].keys(),
         ndb_mod_to_import=ndb_mod_to_import,
         sqlalchemy_mod_to_import=sqlalchemy_mod_to_import,
     )
