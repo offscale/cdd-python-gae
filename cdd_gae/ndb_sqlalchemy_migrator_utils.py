@@ -19,7 +19,7 @@ from ast import (
 from functools import partial
 from operator import ne
 
-from cdd.ast_utils import maybe_type_comment, set_value
+from cdd.shared.ast_utils import maybe_type_comment, set_value
 
 
 def generate_ndb_to_sqlalchemy_mod(

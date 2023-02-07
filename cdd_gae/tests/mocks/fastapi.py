@@ -20,7 +20,7 @@ from ast import (
 from copy import deepcopy
 from itertools import chain
 
-from cdd.ast_utils import maybe_type_comment, set_value
+from cdd.shared.ast_utils import maybe_type_comment, set_value
 
 hello_fastapi_str = """
 app = FastAPI()

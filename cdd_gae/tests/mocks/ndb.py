@@ -16,7 +16,7 @@ from ast import (
 )
 from collections import OrderedDict
 
-from cdd.ast_utils import maybe_type_comment, set_value
+from cdd.shared.ast_utils import maybe_type_comment, set_value
 
 ndb_file_cls_str = """
 class File(FileBase):

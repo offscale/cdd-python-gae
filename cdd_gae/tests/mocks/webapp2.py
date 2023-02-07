@@ -20,7 +20,7 @@ from ast import (
     keyword,
 )
 
-from cdd.ast_utils import maybe_type_comment, set_value
+from cdd.shared.ast_utils import maybe_type_comment, set_value
 
 hello_webapp2_str = """
 class HelloWebapp2(webapp2.RequestHandler):

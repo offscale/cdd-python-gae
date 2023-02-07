@@ -13,7 +13,7 @@ from ast import (
     arguments,
 )
 
-from cdd.ast_utils import maybe_type_comment, set_value
+from cdd.shared.ast_utils import maybe_type_comment, set_value
 
 
 def generate_route(func, uri, cls_name):
@@ -92,4 +92,4 @@ class RewriteResponse(NodeTransformer):
         return node
 
 
-__all__ = ["generate_route"]
+__all__ = ["generate_route", "RewriteResponse"]

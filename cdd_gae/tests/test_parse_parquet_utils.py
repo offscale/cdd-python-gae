@@ -42,8 +42,10 @@ class TestParseParquetUtils(TestCase):
             }
         )
 
-        self.assertDictEqual(cdd_gae.parse.parquet_utils.parquet_type_to_param(table.column(1)),
-                             {"typ": "float", "x_typ": {"sql": {"type": "float"}}})
+        self.assertDictEqual(
+            cdd_gae.parse.parquet_utils.parquet_type_to_param(table.column(1)),
+            {"typ": "float", "x_typ": {"sql": {"type": "Float"}}},
+        )
         self.assertDictEqual(
             cdd_gae.parse.parquet_utils.parquet_type_to_param(table.column(0)),
             {"typ": "int", "x_typ": {"sql": {"type": "BigInteger"}}},

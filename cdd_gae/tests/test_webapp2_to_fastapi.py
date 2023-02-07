@@ -12,9 +12,9 @@ from tempfile import TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import patch
 
-from cdd.ast_utils import cmp_ast
-from cdd.pure_utils import remove_whitespace_comments
-from cdd.source_transformer import to_code
+from cdd.shared.ast_utils import cmp_ast
+from cdd.shared.pure_utils import remove_whitespace_comments
+from cdd.shared.source_transformer import to_code
 from cdd.tests.utils_for_tests import unittest_main
 
 from cdd_gae.tests.mocks.fastapi import (
