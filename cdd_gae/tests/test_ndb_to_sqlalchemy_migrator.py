@@ -11,7 +11,7 @@ from cdd.tests.utils_for_tests import run_ast_test
 
 from cdd_gae import ndb2sqlalchemy_migrator
 from cdd_gae.tests.mocks.ndb import ndb_file_model_str
-from cdd_gae.tests.mocks.sqlalchemy import ndb_to_sqlalchemy_migration_file_str, sqlalchemy_class_file_str
+from cdd_gae.tests.mocks.sqlalchemy import sqlalchemy_class_file_str, ndb_to_sqlalchemy_migration_mod
 
 
 def populate_files(tempdir):
@@ -21,22 +21,21 @@ def populate_files(tempdir):
     :param tempdir: Temporary directory
     :type tempdir: ```str````
 
-    :return: ndb_file_name, sqlalchemy_file_name, empty_dir, expected_ast
-    :rtype: ```Tuple[str, str, str, Module]```
+    :return: ndb_file_name, sqlalchemy_file_name, empty_dir
+    :rtype: ```Tuple[str, str, str]```
     """
     ndb_file_name = os.path.join(tempdir, "ndb_models{extsep}py".format(extsep=extsep))
     sqlalchemy_file_name = os.path.join(
         "sqlalchemy_models{extsep}py".format(extsep=extsep)
     )
     empty_dir = os.path.join(tempdir, "empty_dir")
-    expected_ast = ast.parse(ndb_to_sqlalchemy_migration_file_str)
     os.mkdir(empty_dir)
 
     with open(ndb_file_name, "wt") as f:
         f.write(ndb_file_model_str)
     with open(sqlalchemy_file_name, "wt") as f:
         f.write(sqlalchemy_class_file_str)
-    return ndb_file_name, sqlalchemy_file_name, empty_dir, expected_ast
+    return ndb_file_name, sqlalchemy_file_name, empty_dir
 
 
 class TestNDBToSqlalchemyMigrator(TestCase):
@@ -53,8 +52,7 @@ class TestNDBToSqlalchemyMigrator(TestCase):
         (
             cls.ndb_file_name,
             cls.sqlalchemy_file_name,
-            cls.empty_dir,
-            cls.expected_ast,
+            cls.empty_dir
         ) = populate_files(temp_module_dir)
 
     def test_ndb_sqlalchemy_migrator(self) -> None:
@@ -73,5 +71,5 @@ class TestNDBToSqlalchemyMigrator(TestCase):
         run_ast_test(
             self,
             gen_ast=ast.parse(gen_module_str),
-            gold=self.expected_ast,
+            gold=ndb_to_sqlalchemy_migration_mod,
         )
