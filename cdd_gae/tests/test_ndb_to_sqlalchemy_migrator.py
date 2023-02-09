@@ -26,7 +26,7 @@ def populate_files(tempdir):
     """
     ndb_file_name = os.path.join(tempdir, "ndb_models{extsep}py".format(extsep=extsep))
     sqlalchemy_file_name = os.path.join(
-        "sqlalchemy_models{extsep}py".format(extsep=extsep)
+        tempdir, "sqlalchemy_models{extsep}py".format(extsep=extsep)
     )
     empty_dir = os.path.join(tempdir, "empty_dir")
     os.mkdir(empty_dir)
