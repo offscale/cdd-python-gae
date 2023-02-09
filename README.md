@@ -200,35 +200,59 @@ Use this script to create SQLalchemy files from Parquet files:
 ```bash
 #!/usr/bin/env bash
 
-module_dir='parquet_to_postgres'
+set -euo pipefail
+
+if ! command -v sponge &>/dev/null; then
+  >&2 printf 'sponge not found, you need to:\nsudo apt install moreutils\n'
+  exit 2
+fi
+
+declare -r module_dir='parquet_to_postgres'
 mkdir -p "$module_dir"
-main_py="$module_dir"'/__main__.py'
+declare -r main_py="$module_dir"'/__main__.py'
 printf '%s\n' \
-       'from os import environ' \
-       'from sqlalchemy import create_engine' '' '' \
-       'if __name__ == "__main__":' \
-       '    engine = create_engine(environ["RDBMS_URI"])' \
-       '    print("Creating tables")' \
-       '    Base.metadata.create_all(engine)' > "$main_py"
+	  'from os import environ' \
+	  'from sqlalchemy import create_engine' '' '' \
+	  'if __name__ == "__main__":' \
+	  '     ' \
+	  '    print("Creating tables")' \
+	  '    metadata.create_all(engine)' > "$main_py"
 printf '%s\n' \
-       'from sqlalchemy.orm import declarative_base' '' \
-       'Base = declarative_base()' \
-       '__all__ = ["Base"]' > "$module_dir"'/__init__.py'
+	  'from sqlalchemy import MetaData' '' \
+	  'metadata = MetaData()' \
+	  '__all__ = ["metadata"]' > "$module_dir"'/__init__.py'
 
 declare -a extra_imports=()
 
-for parquet_file in 2023-01-18_0_kind0_000000000000 2023-01-18_0_kind1_000000000000; do
+while read -r parquet_file; do
   IFS='_'; read -r _ _ table_name _ _ _ <<< "${parquet_file//+(*\/|.*)}"
+  if [ -z "$table_name" ]; then
+	parent_dir="${parquet_file%/*}"
+	table_name="${parent_dir##*/}"
+  fi
   py_file="$module_dir"'/'"$table_name"'.py'
-  python -m cdd_gae gen --parse 'parquet' --emit 'sqlalchemy' -i "$parquet_file" -o "$py_file" --name "$table_name"
-  echo -e 'from . import Base' | cat - "$py_file" | sponge "$py_file"
-  printf -v table_import 'from %s.%s import %s' "$module_dir" "$table_name" "$table_name"
+  python -m cdd_gae gen --parse 'parquet' --emit 'sqlalchemy_table' -i "$parquet_file" -o "$py_file" --name "$table_name"
+  echo -e 'from . import metadata' | cat - "$py_file" | sponge "$py_file"
+  printf -v table_import 'from %s.%s import config_tbl as %s' "$module_dir" "$table_name" "$table_name"
   extra_imports+=("$table_import")
-done
+done< <(find /data -type f -name '000000000000')
 
-extra_imports+=('from . import Base')
+extra_imports+=('from . import metadata')
 
 ( IFS=$'\n'; echo -e "${extra_imports[*]}" ) | cat - "$main_py" | sponge "$main_py"
+
+# create_tables script
+create_tables_py="$module_dir"'/create_tables.py'
+printf '%s\n' \
+	  'from os import environ' \
+	  'from sqlalchemy import create_engine' '' '' \
+	  'if __name__ == "__main__":' \
+	  '    engine = create_engine(environ["RDBMS_URI"])' \
+	  '    print("Creating tables")' \
+	  '    metadata.create_all(engine)' > "$create_tables_py"
+( IFS=$'\n'; echo -e "${extra_imports[*]}" ) | cat - "$create_tables_py" | sponge "$create_tables_py"
+
+printf 'To create tables, run:\npython -m %s.create_tables\n' "$module_dir"
 ```
 
 Then run `python -m "$module_dir"` to execute the `CREATE TABLE`s.
