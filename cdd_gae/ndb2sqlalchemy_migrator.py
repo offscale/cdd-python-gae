@@ -65,7 +65,7 @@ def ndb2sqlalchemy_migrator_folder(
     :param ndb_file: Python file containing the NDB `class`es
     :type ndb_file: ```str```
 
-    :param sqlalchemy_file: Python file containing the NDB `class`es
+    :param sqlalchemy_file: Python file containing the Sqlalchemy `class`es
     :type sqlalchemy_file: ```str```
 
     :param ndb_mod_to_import: NDB module name that the entity will be imported from
@@ -124,7 +124,7 @@ def ndb2sqlalchemy_migrator_folder(
     len_sqlalchemy_class_defs = len(sqlalchemy_class_defs)
 
     assert (
-        len_ndb_class_defs == len_sqlalchemy_class_defs - 1
+        len_ndb_class_defs == len_sqlalchemy_class_defs
     ), "{} found SQLalchemy models != {} found NDB models, missing: {}".format(
         len_ndb_class_defs,
         len_sqlalchemy_class_defs,

@@ -1,24 +1,11 @@
 """
 Function to migrate from NDB to SQLalchemy.
 """
-from _ast import Compare, Eq, If, Subscript
-from ast import (
-    Assign,
-    Attribute,
-    Call,
-    Expr,
-    For,
-    ImportFrom,
-    Load,
-    Module,
-    Name,
-    Store,
-    alias,
-    keyword,
-)
+from ast import Assign, Attribute, Call, Expr, For, ImportFrom, Load, Module, Name, Store, alias, keyword
 from functools import partial
 from operator import ne
 
+from _ast import Compare, Eq, If, Subscript
 from cdd.shared.ast_utils import maybe_type_comment, set_value
 
 
@@ -47,13 +34,21 @@ def generate_ndb_to_sqlalchemy_mod(
     ndb_name = "NDB_{name}".format(name=name)
     return Module(
         body=[
-            ImportFrom(module="os", names=[alias(name="environ")], level=0),
-            ImportFrom(module="google.cloud", names=[alias(name="ndb")], level=0),
             ImportFrom(
-                module="sqlalchemy", names=[alias(name="create_engine")], level=0
+                module="os", names=[alias(name="environ", asname="environ")], level=0
             ),
             ImportFrom(
-                module="sqlalchemy.orm", names=[alias(name="sessionmaker")], level=0
+                module="google.cloud", names=[alias(name="ndb", asname="ndb")], level=0
+            ),
+            ImportFrom(
+                module="sqlalchemy",
+                names=[alias(name="create_engine", asname="create_engine")],
+                level=0,
+            ),
+            ImportFrom(
+                module="sqlalchemy.orm",
+                names=[alias(name="sessionmaker", asname="sessionmaker")],
+                level=0,
             ),
             ImportFrom(
                 module=ndb_mod_to_import,
