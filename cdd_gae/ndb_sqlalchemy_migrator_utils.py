@@ -47,13 +47,13 @@ def generate_ndb_to_sqlalchemy_mod(
     ndb_name = "NDB_{name}".format(name=name)
     return Module(
         body=[
-            ImportFrom(module="os", names=[alias(name="environ", asname="environ")], level=0),
-            ImportFrom(module="google.cloud", names=[alias(name="ndb", asname="ndb")], level=0),
+            ImportFrom(module="os", names=[alias(name="environ")], level=0),
+            ImportFrom(module="google.cloud", names=[alias(name="ndb")], level=0),
             ImportFrom(
-                module="sqlalchemy", names=[alias(name="create_engine", asname="create_engine")], level=0
+                module="sqlalchemy", names=[alias(name="create_engine")], level=0
             ),
             ImportFrom(
-                module="sqlalchemy.orm", names=[alias(name="sessionmaker", asname="sessionmaker")], level=0
+                module="sqlalchemy.orm", names=[alias(name="sessionmaker")], level=0
             ),
             ImportFrom(
                 module=ndb_mod_to_import,
