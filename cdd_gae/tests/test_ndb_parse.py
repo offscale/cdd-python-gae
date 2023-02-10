@@ -65,7 +65,5 @@ class TestNdbParse(TestCase):
 
         self.assertDictEqual(ndb_file_ir, ir)
 
-    maxDiff = None
-
 
 unittest_main()

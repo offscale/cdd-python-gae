@@ -2,8 +2,23 @@
 Mocks for webapp2
 """
 
-from ast import (Assign, Attribute, Call, ClassDef, Expr, FunctionDef, List, Load, Module, Name, Store, Tuple, arg,
-                 arguments, keyword)
+from ast import (
+    Assign,
+    Attribute,
+    Call,
+    ClassDef,
+    Expr,
+    FunctionDef,
+    List,
+    Load,
+    Module,
+    Name,
+    Store,
+    Tuple,
+    arg,
+    arguments,
+    keyword,
+)
 
 from cdd.shared.ast_utils import maybe_type_comment, set_value
 

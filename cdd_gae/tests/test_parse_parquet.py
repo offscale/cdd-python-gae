@@ -1,6 +1,7 @@
 """
 Tests for Parquet parsing
 """
+
 from collections import OrderedDict
 from os import path
 from unittest import TestCase

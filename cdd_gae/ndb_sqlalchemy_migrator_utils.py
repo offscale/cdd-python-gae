@@ -1,11 +1,28 @@
 """
 Function to migrate from NDB to SQLalchemy.
 """
-from ast import Assign, Attribute, Call, Expr, For, ImportFrom, Load, Module, Name, Store, alias, keyword
+
+from ast import (
+    Assign,
+    Attribute,
+    Call,
+    Compare,
+    Eq,
+    Expr,
+    For,
+    If,
+    ImportFrom,
+    Load,
+    Module,
+    Name,
+    Store,
+    Subscript,
+    alias,
+    keyword,
+)
 from functools import partial
 from operator import ne
 
-from _ast import Compare, Eq, If, Subscript
 from cdd.shared.ast_utils import maybe_type_comment, set_value
 
 

@@ -2,7 +2,18 @@
 Mocks for NDB
 """
 
-from ast import Assign, Attribute, Call, ClassDef, List, Load, Module, Name, Store, keyword
+from ast import (
+    Assign,
+    Attribute,
+    Call,
+    ClassDef,
+    List,
+    Load,
+    Module,
+    Name,
+    Store,
+    keyword,
+)
 from collections import OrderedDict
 
 from cdd.shared.ast_utils import maybe_type_comment, set_value
