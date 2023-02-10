@@ -4,7 +4,7 @@ black
 psycopg
 pyarrow
 #python-cdd
-https://api.github.com/repos/offscale/cdd-python/zipball#egg=cdd
+https://api.github.com/repos/offscale/cdd-python/zipball#egg=python_cdd
 pyyaml
 sqlalchemy
 typing-extensions
