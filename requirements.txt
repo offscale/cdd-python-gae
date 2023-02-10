@@ -3,7 +3,8 @@ https://github.com/offscale/astor/archive/refs/heads/empty-annassign.zip
 black
 psycopg
 pyarrow
-python-cdd
+#python-cdd
+https://api.github.com/repos/offscale/cdd-python/zipball#egg=cdd
 pyyaml
 sqlalchemy
 typing-extensions
