@@ -18,6 +18,13 @@ from collections import OrderedDict
 
 from cdd.shared.ast_utils import maybe_type_comment, set_value
 
+ndb_file_model_str = """
+from google.appengine.ext import ndb
+class Person(ndb.Model):
+  name = ndb.StringProperty()
+  age = ndb.IntegerProperty()
+"""
+
 ndb_file_cls_str = """
 class File(FileBase):
     updated = ndb.DateTimeProperty(auto_now=True, index=False)
@@ -339,6 +346,7 @@ ndb_file_sqlalchemy_output_mod = Module(
 )
 
 __all__ = [
+    "ndb_file_model_str",
     "ndb_file_cls",
     "ndb_file_cls_str",
     "ndb_file_ir",
