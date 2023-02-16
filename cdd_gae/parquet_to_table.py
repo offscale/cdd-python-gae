@@ -32,7 +32,7 @@ def parse_col(col):
     elif isinstance(col, (list, tuple, np.ndarray)):
         if len(col) == 0:
             return "{}"
-        return col
+        return dumps(col)
     elif isinstance(col, dict):
         return dumps(col)
     elif isinstance(col, datetime):
@@ -70,7 +70,9 @@ def psql_insert_copy(table, conn, keys, data_iter):
         else:
             table_name = table.name
 
-        sql = 'COPY "{}" ({}) FROM STDIN WITH CSV'.format(table_name, columns)
+        sql = cur.mogrify(
+            'COPY "{}" ({}) FROM STDIN WITH CSV'.format(table_name, columns)
+        )
         cur.copy_expert(sql=sql, file=s_buf)
 
 
@@ -99,6 +101,7 @@ def parquet_to_table(filename, table_name=None, database_uri=None, dry_run=False
     )
     if table_name is None:
         table_name = path.basename(filename).rpartition("_")[0].rpartition("_")[2]
+    print("table_name:", table_name, ";")
 
     deque(
         map(
