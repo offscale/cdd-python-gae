@@ -6,13 +6,25 @@ import csv
 from collections import deque
 from datetime import datetime
 from io import StringIO
-from json import dumps
 from operator import methodcaller
 from os import environ, path
 
 import numpy as np
+from cdd.shared.pure_utils import pp
 from pyarrow.parquet import ParquetFile
 from sqlalchemy import create_engine
+
+
+def postgres_csvify(col):
+    return (
+        str(col)
+        .replace("[", "{")
+        .replace("]", "}")
+        .replace("None", "NULL")
+        .replace("'", '"')
+        .replace('""', '"')
+        .replace(': ",', ': "",')
+    )
 
 
 def parse_col(col):
@@ -25,16 +37,24 @@ def parse_col(col):
     :return: A variant of the input that `COPY FROM` can deal with on a CSV read
     :rtype: ```Any```
     """
-    if isinstance(col, (str, complex, int, bytes, set, frozenset, type(None))):
+    if isinstance(col, str):
+        return col  # '"{}"'.format(col)
+    elif isinstance(col, bytes):
+        try:
+            return col.decode("utf8")  # '"{}"'.format(col.decode('utf8'))
+        except UnicodeError:
+            print("unable to decode: {!r} ;".format(col))
+            raise
+    elif isinstance(col, (complex, int, set, frozenset, type(None))):
         return col
     elif isinstance(col, float):
         return int(col) if col.is_integer() else col
-    elif isinstance(col, (list, tuple, np.ndarray)):
-        if len(col) == 0:
-            return "{}"
-        return dumps(col)
+    elif isinstance(col, np.ndarray):
+        return postgres_csvify(col.tolist()) or "{}"
+    elif isinstance(col, (list, tuple)):
+        return postgres_csvify(col) if col else "{}"
     elif isinstance(col, dict):
-        return dumps(col)
+        return postgres_csvify(col)
     elif isinstance(col, datetime):
         return col.isoformat()
     else:
@@ -60,19 +80,22 @@ def psql_insert_copy(table, conn, keys, data_iter):
         writer = csv.writer(s_buf)
 
         # Note: The `[1:]` selection here and in `columns` below is to omit the array index
-        data_iter = map(lambda record: tuple(map(parse_col, record[1:])), data_iter)
-        writer.writerows(data_iter)
+        try:
+            data_iter = map(lambda record: tuple(map(parse_col, record[1:])), data_iter)
+            writer.writerows(data_iter)
+        except:
+            pp({"columns": tuple(keys)})
+            raise
         s_buf.seek(0)
 
-        columns = ", ".join(map('"{}"'.format, keys[1:]))
+        columns = ", ".join(keys[1:])
         if table.schema:
             table_name = '{}."{}"'.format(table.schema, table.name)
         else:
             table_name = table.name
 
-        sql = cur.mogrify(
-            'COPY "{}" ({}) FROM STDIN WITH CSV'.format(table_name, columns)
-        )
+        sql = 'COPY "{}" ({}) FROM STDIN WITH CSV'.format(table_name, columns)
+        s_buf.seek(0)
         cur.copy_expert(sql=sql, file=s_buf)
 
 
