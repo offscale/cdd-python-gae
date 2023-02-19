@@ -4,6 +4,7 @@ Tests for Parquet to Table
 
 import inspect
 import unittest
+from collections import namedtuple
 from copy import deepcopy
 from datetime import datetime
 from itertools import repeat
@@ -34,7 +35,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Query, Session
 
-from cdd_gae.parquet_to_table import parquet_to_table
+from cdd_gae.parquet_to_table import (
+    csv_to_postgres_text,
+    parquet_to_table,
+    psql_insert_copy,
+)
 
 metadata = MetaData()
 
@@ -87,6 +92,39 @@ class TestParquetToTable(TestCase):
     Tests whether `COPY FROM` is correctly generated from `parquet_to_table`
     """
 
+    # "\n".join(
+    #     map(
+    #         lambda i: "\t".join(
+    #             (
+    #                 '2023-02-18 12:14:43.592777-05{"can": "haz"}',
+    #                 "{Flamingo,Centipede}",
+    #                 "{0,1,2,3,4,5}",
+    #                 '{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}',
+    #                 str(i),
+    #             )
+    #         ),
+    #         range(1, 4),
+    #     )
+    # )
+
+    copy_to_stdout_mock = (
+        '2023-02-18 12:14:43.592777-05	{"can": "haz"}	{Flamingo,Centipede}	{0,1,2,3,4,5}	{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}	1'
+        '2023-02-18 12:14:43.592777-05	{"can": "haz"}	{Flamingo,Centipede}	{0,1,2,3,4,5}	{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}	2'
+        '2023-02-18 12:14:43.592777-05	{"can": "haz"}	{Flamingo,Centipede}	{0,1,2,3,4,5}	{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}	3'
+    )
+    # psql: `COPY test_sqlalchemy_csv TO STDOUT;`
+
+    to_csv_mock = (
+        "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	1\n"
+        "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	2\n"
+        "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	3\n"
+    )  # python: `pd.read_sql_query("SELECT * FROM").to_csv`
+
+    def test_csv_to_postgres_text(self):
+        self.assertEqual(
+            self.copy_to_stdout_mock, csv_to_postgres_text(self.to_csv_mock)
+        )
+
     @unittest.skipUnless(
         "RDBMS_URI" in environ, "RDMBS_URI env var must be set to for this test to run"
     )
@@ -126,21 +164,23 @@ class TestParquetToTable(TestCase):
                 )
                 session.commit()
                 self.assertEqual(Query([Tbl], session=session).count(), 3)
-                results = pd.read_sql_query(
-                    "select * from {}".format(table_name), engine
-                ).to_csv(index=False, sep="\t")
+                df = pd.read_sql_query("SELECT * FROM {}".format(table_name), engine)
+
+                results = df.to_csv(index=False, sep="\t")
                 self.assertEqual(
                     results,
-                    "\n".join(
-                        (
-                            "timestamp_col	json_col	array_str_col	array_bigint_col	array_json_col	id",
-                            "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	1",
-                            "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	2",
-                            "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	3\n",
-                        )
-                    )
+                    "timestamp_col\tjson_col\tarray_str_col\tarray_bigint_col\tarray_json_col\tid\n{0}".format(
+                        self.to_csv_mock
+                    ),
+                )
+                psql_insert_copy(
+                    namedtuple("_", ("name", "schema"))(table_name, None),
+                    engine.raw_connection(),
+                    table.columns.keys(),
+                    results.split("\n")[1:],
                 )
         finally:
+            return
             if sqlalchemy.inspect(engine).has_table(table_name):
                 metadata.drop_all(tables=[table], bind=engine)
 

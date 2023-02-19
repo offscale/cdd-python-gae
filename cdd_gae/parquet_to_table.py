@@ -1,16 +1,17 @@
 """
 Parquet file to an executable insertion `COPY FROM` into a table
 """
-
 import csv
 from collections import deque
 from datetime import datetime
+from functools import partial
 from io import StringIO
+from json import dumps, loads
 from operator import methodcaller
 from os import environ, path
 
 import numpy as np
-from cdd.shared.pure_utils import pp
+from cdd.shared.pure_utils import identity, pp
 from pyarrow.parquet import ParquetFile
 from sqlalchemy import create_engine
 
@@ -97,6 +98,41 @@ def psql_insert_copy(table, conn, keys, data_iter):
         sql = 'COPY "{}" ({}) FROM STDIN WITH CSV'.format(table_name, columns)
         s_buf.seek(0)
         cur.copy_expert(sql=sql, file=s_buf)
+
+
+def csv_to_postgres_text(lines):
+    return "\n".join(map(csv_to_postgres_line, lines.split("\n")))
+
+
+def csv_to_postgres_line(line):
+    columns = line.split(
+        "\t"
+    )  # TODO: Handle escaped strings that contain the tab character
+    return "\t".join(map(csv_col_to_postgres_col, columns))
+
+
+def csv_col_to_postgres_col(col):
+    is_array = col.startswith("[") and col.endswith("]")
+    if is_array or col.startswith("{") and col.endswith("}"):
+        col_parsed = loads(col.replace("'", '"'))
+        if is_array:
+            col = "{{{0}}}".format(
+                ",".join(
+                    map(
+                        identity
+                        if not col_parsed
+                        or isinstance(col_parsed[0], (str, bytes, complex, float, int))
+                        else repr,
+                        map(partial(dumps, separators=(",", ":")), col_parsed),
+                    )
+                )
+            )
+        else:
+            col = dumps(
+                col_parsed, separators=(",", ":")
+            )  # .replace("[", "{").replace("]", "}")
+
+    return col.replace("'", '"')
 
 
 def parquet_to_table(filename, table_name=None, database_uri=None, dry_run=False):
