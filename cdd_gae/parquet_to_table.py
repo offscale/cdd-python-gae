@@ -1,7 +1,7 @@
 """
 Parquet file to an executable insertion `COPY FROM` into a table
 """
-import csv
+
 from collections import deque
 from datetime import datetime
 from functools import partial
@@ -21,7 +21,7 @@ def postgres_csvify(col):
         str(col)
         .replace("[", "{")
         .replace("]", "}")
-        .replace("None", "NULL")
+        .replace("None", "null")
         .replace("'", '"')
         .replace('""', '"')
         .replace(': ",', ': "",')
@@ -38,28 +38,45 @@ def parse_col(col):
     :return: A variant of the input that `COPY FROM` can deal with on a CSV read
     :rtype: ```Any```
     """
-    if isinstance(col, str):
-        return col  # '"{}"'.format(col)
+    if isinstance(col, np.ndarray):
+        return parse_col(col.tolist()) if col.size > 0 else "null"
+    elif isinstance(col, bool):
+        return int(col)
     elif isinstance(col, bytes):
         try:
-            return col.decode("utf8")  # '"{}"'.format(col.decode('utf8'))
+            return parse_col(col.decode("utf8"))  # '"{}"'.format(col.decode('utf8'))
         except UnicodeError:
             print("unable to decode: {!r} ;".format(col))
             raise
-    elif isinstance(col, (complex, int, set, frozenset, type(None))):
+    elif isinstance(col, (complex, int)):
         return col
     elif isinstance(col, float):
         return int(col) if col.is_integer() else col
-    elif isinstance(col, np.ndarray):
-        return postgres_csvify(col.tolist()) or "{}"
-    elif isinstance(col, (list, tuple)):
-        return postgres_csvify(col) if col else "{}"
+    elif col in (None, "{}", "[]") or not col:
+        return "null"
+    elif isinstance(col, str):
+        return {"True": 1, "False": 0}.get(col, col)  # '"{}"'.format(col)
+    elif isinstance(col, (list, tuple, set, frozenset)):
+        return "{{{0}{1}}}".format(
+            ",".join(
+                map(  # partial(maybe_quote_and_escape, ch="'")
+                    '"{}"'.format, map(parse_col, col)
+                )
+            ),
+            "," if len(col) == 1 else "",
+        )
     elif isinstance(col, dict):
-        return postgres_csvify(col)
+        return dumps(col, separators=(",", ":")).replace('"', '\\"')
     elif isinstance(col, datetime):
         return col.isoformat()
     else:
         raise NotImplementedError(type(col))
+
+
+def maybe_quote_and_escape(s, ch='"'):
+    if isinstance(s, str) and s.startswith("{") and s.endswith("}"):
+        return "{ch}{}{ch}".format(s.replace('"', '\\"'), ch=ch)
+    return s
 
 
 def psql_insert_copy(table, conn, keys, data_iter):
@@ -78,26 +95,36 @@ def psql_insert_copy(table, conn, keys, data_iter):
     dbapi_conn = conn.connection
     with dbapi_conn.cursor() as cur:
         s_buf = StringIO()
-        writer = csv.writer(s_buf)
-
-        # Note: The `[1:]` selection here and in `columns` below is to omit the array index
-        try:
-            data_iter = map(lambda record: tuple(map(parse_col, record[1:])), data_iter)
-            writer.writerows(data_iter)
-        except:
-            pp({"columns": tuple(keys)})
-            raise
+        s_buf.writelines(
+            "\n".join(
+                map(lambda line: "\t".join(map(str, map(parse_col, line))), data_iter)
+            )
+        )
         s_buf.seek(0)
 
-        columns = ", ".join(keys[1:])
+        columns = ", ".join(keys[1:] if keys and keys[0] == "index" else keys)
         if table.schema:
             table_name = '{}."{}"'.format(table.schema, table.name)
         else:
             table_name = table.name
 
-        sql = 'COPY "{}" ({}) FROM STDIN WITH CSV'.format(table_name, columns)
-        s_buf.seek(0)
-        cur.copy_expert(sql=sql, file=s_buf)
+        sql = "COPY \"{}\" ({}) FROM STDIN WITH null as 'null'".format(
+            table_name, columns
+        )
+        try:
+            cur.copy_expert(sql=sql, file=s_buf)
+        except:
+            print(sql)
+            s_buf.seek(0)
+            pp(
+                dict(
+                    zip(
+                        keys[1:] if keys and keys[0] == "index" else keys,
+                        next(s_buf).split("\t"),
+                    )
+                )
+            )
+            raise
 
 
 def csv_to_postgres_text(lines):
@@ -119,10 +146,10 @@ def csv_col_to_postgres_col(col):
             col = "{{{0}}}".format(
                 ",".join(
                     map(
-                        identity
+                        lambda a: identity(a)
                         if not col_parsed
                         or isinstance(col_parsed[0], (str, bytes, complex, float, int))
-                        else repr,
+                        else repr(a).replace('"', '\\"'),
                         map(partial(dumps, separators=(",", ":")), col_parsed),
                     )
                 )
@@ -165,7 +192,11 @@ def parquet_to_table(filename, table_name=None, database_uri=None, dry_run=False
     deque(
         map(
             lambda df: df.to_sql(
-                table_name, con=engine, if_exists="append", method=psql_insert_copy
+                table_name,
+                con=engine,
+                if_exists="append",
+                method=psql_insert_copy,
+                index=False,
             ),
             map(methodcaller("to_pandas"), parquet_file.iter_batches()),
         ),
