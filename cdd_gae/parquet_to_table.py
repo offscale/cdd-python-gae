@@ -11,6 +11,7 @@ from operator import methodcaller
 from os import environ, path
 
 import numpy as np
+import psycopg2.sql
 from cdd.shared.pure_utils import identity, pp
 from pyarrow.parquet import ParquetFile
 from sqlalchemy import create_engine
@@ -44,7 +45,7 @@ def parse_col(col):
         return int(col)
     elif isinstance(col, bytes):
         try:
-            return parse_col(col.decode("utf8"))  # '"{}"'.format(col.decode('utf8'))
+            return parse_col(col.decode("utf8"))
         except UnicodeError:
             print("unable to decode: {!r} ;".format(col))
             raise
@@ -55,18 +56,14 @@ def parse_col(col):
     elif col in (None, "{}", "[]") or not col:
         return "null"
     elif isinstance(col, str):
-        return {"True": 1, "False": 0}.get(col, col)  # '"{}"'.format(col)
+        return {"True": 1, "False": 0}.get(col, col)
     elif isinstance(col, (list, tuple, set, frozenset)):
         return "{{{0}{1}}}".format(
-            ",".join(
-                map(  # partial(maybe_quote_and_escape, ch="'")
-                    '"{}"'.format, map(parse_col, col)
-                )
-            ),
+            ",".join(map(partial(dumps, separators=(",", ":")), map(parse_col, col))),
             "," if len(col) == 1 else "",
         )
     elif isinstance(col, dict):
-        return dumps(col, separators=(",", ":")).replace('"', '\\"')
+        return dumps(col, separators=(",", ":"))
     elif isinstance(col, datetime):
         return col.isoformat()
     else:
@@ -97,19 +94,23 @@ def psql_insert_copy(table, conn, keys, data_iter):
         s_buf = StringIO()
         s_buf.writelines(
             "\n".join(
-                map(lambda line: "\t".join(map(str, map(parse_col, line))), data_iter)
+                map(lambda line: "|".join(map(str, map(parse_col, line))), data_iter)
             )
         )
         s_buf.seek(0)
 
-        columns = ", ".join(keys[1:] if keys and keys[0] == "index" else keys)
-        if table.schema:
-            table_name = '{}."{}"'.format(table.schema, table.name)
-        else:
-            table_name = table.name
-
-        sql = "COPY \"{}\" ({}) FROM STDIN WITH null as 'null'".format(
-            table_name, columns
+        sql = "COPY {} ({}) FROM STDIN WITH null as 'null' DELIMITER '|'".format(
+            psycopg2.sql.Identifier(
+                *(table.schema, table.name) if table.schema else (table.name,)
+            ).as_string(cur),
+            psycopg2.sql.SQL(", ")
+            .join(
+                map(
+                    psycopg2.sql.Identifier,
+                    keys[1:] if keys and keys[0] == "index" else keys,
+                )
+            )
+            .as_string(cur),
         )
         try:
             cur.copy_expert(sql=sql, file=s_buf)
@@ -120,7 +121,7 @@ def psql_insert_copy(table, conn, keys, data_iter):
                 dict(
                     zip(
                         keys[1:] if keys and keys[0] == "index" else keys,
-                        next(s_buf).split("\t"),
+                        next(s_buf).split("|"),
                     )
                 )
             )
