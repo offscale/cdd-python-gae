@@ -1,10 +1,11 @@
 # Note: no dependencies are required on Python >=3.9; `black` is optional; `pyyaml` is mostly optional
-https://github.com/offscale/astor/archive/refs/heads/empty-annassign.zip
+#python-cdd
 black
+https://api.github.com/repos/offscale/cdd-python/zipball#egg=python_cdd
+https://github.com/offscale/astor/archive/refs/heads/empty-annassign.zip
+pgcopy
 psycopg
 pyarrow
-#python-cdd
-https://api.github.com/repos/offscale/cdd-python/zipball#egg=python_cdd
 pyyaml
 sqlalchemy
 typing-extensions

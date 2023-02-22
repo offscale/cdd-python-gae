@@ -17,6 +17,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import sqlalchemy
+from cdd.shared.pure_utils import rpartial
 from cdd.tests.utils_for_tests import unittest_main
 from psycopg2.extensions import AsIs, register_adapter
 from sqlalchemy import (
@@ -121,12 +122,15 @@ class TestParquetToTable(TestCase):
     )  # python: `pd.read_sql_query("SELECT * FROM").to_csv`
 
     def test_csv_to_postgres_text(self):
-        self.assertEqual(
-            self.copy_to_stdout_mock, csv_to_postgres_text(self.to_csv_mock)
+        self.assertListEqual(
+            *map(
+                rpartial(str.split, "\n"),
+                (self.copy_to_stdout_mock, csv_to_postgres_text(self.to_csv_mock)),
+            )
         )
 
     @unittest.skipUnless(
-        "RDBMS_URI" in environ, "RDMBS_URI env var must be set to for this test to run"
+        "RDBMS_URI" in environ, "RDMBS_URI env var must be set for this test to run"
     )
     def test_sqlalchemy_csv(self) -> None:
         """Reverse-engineer SQLalchemy's handling of complex types for cdd_gae's implementation"""
@@ -165,8 +169,9 @@ class TestParquetToTable(TestCase):
                 session.commit()
                 self.assertEqual(Query([Tbl], session=session).count(), 3)
                 df = pd.read_sql_query("SELECT * FROM {}".format(table_name), engine)
+                # session.execute("TRUNCATE {}".format(table_name))
 
-                results = df.to_csv(index=False, sep="\t")
+                results = df.to_csv(index=False, sep="\t", header=False)
                 self.assertEqual(
                     results,
                     "timestamp_col\tjson_col\tarray_str_col\tarray_bigint_col\tarray_json_col\tid\n{0}".format(
@@ -185,7 +190,7 @@ class TestParquetToTable(TestCase):
                 metadata.drop_all(tables=[table], bind=engine)
 
     @unittest.skipUnless(
-        "RDBMS_URI" in environ, "RDMBS_URI env var must be set to for this test to run"
+        "RDBMS_URI" in environ, "RDMBS_URI env var must be set for this test to run"
     )
     @with_own_table
     def test_parquet_to_table(self) -> None:

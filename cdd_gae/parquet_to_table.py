@@ -5,14 +5,14 @@ Parquet file to an executable insertion `COPY FROM` into a table
 from collections import deque
 from datetime import datetime
 from functools import partial
-from io import StringIO
 from json import dumps, loads
 from operator import methodcaller
 from os import environ, path
 
 import numpy as np
 import psycopg2.sql
-from cdd.shared.pure_utils import identity, pp
+from cdd.shared.pure_utils import identity
+from pgcopy import CopyManager
 from pyarrow.parquet import ParquetFile
 from sqlalchemy import create_engine
 
@@ -70,6 +70,10 @@ def parse_col(col):
         raise NotImplementedError(type(col))
 
 
+# {"\\"first item\\"","\\"second item\\"",
+#  "\\"third item with \\\\\\"quotes\\\\\\" inside\\"","\\"fourth with a \\\\\\\\ backslash\\""}
+
+
 def maybe_quote_and_escape(s, ch='"'):
     if isinstance(s, str) and s.startswith("{") and s.endswith("}"):
         return "{ch}{}{ch}".format(s.replace('"', '\\"'), ch=ch)
@@ -88,44 +92,17 @@ def psql_insert_copy(table, conn, keys, data_iter):
         Column names
     data_iter : Iterable that iterates the values to be inserted
     """
-    # gets a DBAPI connection that can provide a cursor
-    dbapi_conn = conn.connection
-    with dbapi_conn.cursor() as cur:
-        s_buf = StringIO()
-        s_buf.writelines(
-            "\n".join(
-                map(lambda line: "|".join(map(str, map(parse_col, line))), data_iter)
-            )
-        )
-        s_buf.seek(0)
 
-        sql = "COPY {} ({}) FROM STDIN WITH null as 'null' DELIMITER '|'".format(
-            psycopg2.sql.Identifier(
-                *(table.schema, table.name) if table.schema else (table.name,)
-            ).as_string(cur),
-            psycopg2.sql.SQL(", ")
-            .join(
-                map(
-                    psycopg2.sql.Identifier,
-                    keys[1:] if keys and keys[0] == "index" else keys,
-                )
-            )
-            .as_string(cur),
-        )
-        try:
-            cur.copy_expert(sql=sql, file=s_buf)
-        except:
-            print(sql)
-            s_buf.seek(0)
-            pp(
-                dict(
-                    zip(
-                        keys[1:] if keys and keys[0] == "index" else keys,
-                        next(s_buf).split("|"),
-                    )
-                )
-            )
-            raise
+    with conn.connection.cursor() as cur:
+        table_name = psycopg2.sql.Identifier(
+            *(table.schema, table.name) if table.schema else (table.name,)
+        ).as_string(cur)
+
+    mgr = CopyManager(
+        conn.connection, table.name, keys[1:] if keys and keys[0] == "index" else keys
+    )
+    mgr.copy(data_iter)
+    conn.connection.commit()
 
 
 def csv_to_postgres_text(lines):
