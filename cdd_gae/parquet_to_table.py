@@ -101,7 +101,7 @@ def psql_insert_copy(table, conn, keys, data_iter):
     mgr = CopyManager(
         conn.connection, table.name, keys[1:] if keys and keys[0] == "index" else keys
     )
-    mgr.copy(data_iter)
+    mgr.copy(map(lambda line: map(parse_col, line), data_iter))
     conn.connection.commit()
 
 
