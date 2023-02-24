@@ -17,7 +17,6 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import sqlalchemy
-from cdd.shared.pure_utils import rpartial
 from cdd.tests.utils_for_tests import unittest_main
 from psycopg2.extensions import AsIs, register_adapter
 from sqlalchemy import (
@@ -36,11 +35,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Query, Session
 
-from cdd_gae.parquet_to_table import (
-    csv_to_postgres_text,
-    parquet_to_table,
-    psql_insert_copy,
-)
+from cdd_gae.parquet_to_table import parquet_to_table, parse_col, psql_insert_copy
 
 metadata = MetaData()
 
@@ -121,13 +116,11 @@ class TestParquetToTable(TestCase):
         "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	3\n"
     )  # python: `pd.read_sql_query("SELECT * FROM").to_csv`
 
-    def test_csv_to_postgres_text(self):
-        self.assertListEqual(
-            *map(
-                rpartial(str.split, "\n"),
-                (self.copy_to_stdout_mock, csv_to_postgres_text(self.to_csv_mock)),
-            )
-        )
+    def test_parse_col(self):
+        """
+        Test `parse_col` variants
+        """
+        self.assertEqual(parse_col(True), 1)
 
     @unittest.skipUnless(
         "RDBMS_URI" in environ, "RDMBS_URI env var must be set for this test to run"

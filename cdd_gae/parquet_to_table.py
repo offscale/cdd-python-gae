@@ -4,80 +4,54 @@ Parquet file to an executable insertion `COPY FROM` into a table
 
 from collections import deque
 from datetime import datetime
-from functools import partial
-from json import dumps, loads
+from json import dumps
 from operator import methodcaller
 from os import environ, path
+from sys import stderr
 
 import numpy as np
 import psycopg2.sql
-from cdd.shared.pure_utils import identity
 from pgcopy import CopyManager
 from pyarrow.parquet import ParquetFile
 from sqlalchemy import create_engine
 
 
-def postgres_csvify(col):
-    return (
-        str(col)
-        .replace("[", "{")
-        .replace("]", "}")
-        .replace("None", "null")
-        .replace("'", '"')
-        .replace('""', '"')
-        .replace(': ",', ': "",')
-    )
-
-
 def parse_col(col):
     """
-    Parse column into something `COPY FROM` can deal with on a CSV read
+    Parse column into something `COPY FROM` can deal with
 
     :param col: Column
     :type col: ```Any```
 
-    :return: A variant of the input that `COPY FROM` can deal with on a CSV read
+    :return: A variant of the input that `COPY FROM` can deal with
     :rtype: ```Any```
     """
     if isinstance(col, np.ndarray):
-        return parse_col(col.tolist()) if col.size > 0 else "null"
+        return parse_col(col.tolist()) if col.size > 0 else None
     elif isinstance(col, bool):
         return int(col)
     elif isinstance(col, bytes):
         try:
             return parse_col(col.decode("utf8"))
         except UnicodeError:
-            print("unable to decode: {!r} ;".format(col))
+            print("unable to decode: {!r} ;".format(col), file=stderr)
             raise
     elif isinstance(col, (complex, int)):
         return col
     elif isinstance(col, float):
         return int(col) if col.is_integer() else col
     elif col in (None, "{}", "[]") or not col:
-        return "null"
+        return None
     elif isinstance(col, str):
         return {"True": 1, "False": 0}.get(col, col)
     elif isinstance(col, (list, tuple, set, frozenset)):
-        return "{{{0}{1}}}".format(
-            ",".join(map(partial(dumps, separators=(",", ":")), map(parse_col, col))),
-            "," if len(col) == 1 else "",
-        )
+        return list(map(str, map(parse_col, col)))
     elif isinstance(col, dict):
         return dumps(col, separators=(",", ":"))
     elif isinstance(col, datetime):
-        return col.isoformat()
+        return col
     else:
         raise NotImplementedError(type(col))
-
-
-# {"\\"first item\\"","\\"second item\\"",
-#  "\\"third item with \\\\\\"quotes\\\\\\" inside\\"","\\"fourth with a \\\\\\\\ backslash\\""}
-
-
-def maybe_quote_and_escape(s, ch='"'):
-    if isinstance(s, str) and s.startswith("{") and s.endswith("}"):
-        return "{ch}{}{ch}".format(s.replace('"', '\\"'), ch=ch)
-    return s
 
 
 def psql_insert_copy(table, conn, keys, data_iter):
@@ -103,41 +77,6 @@ def psql_insert_copy(table, conn, keys, data_iter):
     )
     mgr.copy(map(lambda line: map(parse_col, line), data_iter))
     conn.connection.commit()
-
-
-def csv_to_postgres_text(lines):
-    return "\n".join(map(csv_to_postgres_line, lines.split("\n")))
-
-
-def csv_to_postgres_line(line):
-    columns = line.split(
-        "\t"
-    )  # TODO: Handle escaped strings that contain the tab character
-    return "\t".join(map(csv_col_to_postgres_col, columns))
-
-
-def csv_col_to_postgres_col(col):
-    is_array = col.startswith("[") and col.endswith("]")
-    if is_array or col.startswith("{") and col.endswith("}"):
-        col_parsed = loads(col.replace("'", '"'))
-        if is_array:
-            col = "{{{0}}}".format(
-                ",".join(
-                    map(
-                        lambda a: identity(a)
-                        if not col_parsed
-                        or isinstance(col_parsed[0], (str, bytes, complex, float, int))
-                        else repr(a).replace('"', '\\"'),
-                        map(partial(dumps, separators=(",", ":")), col_parsed),
-                    )
-                )
-            )
-        else:
-            col = dumps(
-                col_parsed, separators=(",", ":")
-            )  # .replace("[", "{").replace("]", "}")
-
-    return col.replace("'", '"')
 
 
 def parquet_to_table(filename, table_name=None, database_uri=None, dry_run=False):
