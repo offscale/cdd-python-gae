@@ -31,8 +31,8 @@ ndb_type_map = {
 }
 
 ndb2sqlalchemy_types = {
-    "BlobKeyProperty": "str",
-    "BlobProperty": "str",
+    "BlobKeyProperty": "LargeBinary",
+    "BlobProperty": "LargeBinary",
     "BooleanProperty": "Boolean",
     "ComputedProperty": "str",
     "DateProperty": "Date",

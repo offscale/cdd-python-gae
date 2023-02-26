@@ -4,16 +4,30 @@ Parquet file to an executable insertion `COPY FROM` into a table
 
 from collections import deque
 from datetime import datetime
-from json import dumps
+from json import JSONEncoder, dumps
 from operator import methodcaller
 from os import environ, path
-from sys import stderr
 
 import numpy as np
-import psycopg2.sql
 from pgcopy import CopyManager
 from pyarrow.parquet import ParquetFile
 from sqlalchemy import create_engine
+
+
+class BytesEncoder(JSONEncoder):
+    """
+    Bytes encoder (JSON)
+    """
+
+    def default(self, obj):
+        """
+        Decode the bytes using UTF8 for JSON encoder
+        """
+        return (
+            obj.decode("utf-8")
+            if isinstance(obj, bytes)
+            else JSONEncoder.default(self, obj)
+        )
 
 
 def parse_col(col):
@@ -30,26 +44,18 @@ def parse_col(col):
         return parse_col(col.tolist()) if col.size > 0 else None
     elif isinstance(col, bool):
         return int(col)
-    elif isinstance(col, bytes):
-        try:
-            return parse_col(col.decode("utf8"))
-        except UnicodeError:
-            print("unable to decode: {!r} ;".format(col), file=stderr)
-            raise
-    elif isinstance(col, (complex, int)):
+    elif col in (None, "{}", "[]") or not col:
+        return None
+    elif isinstance(col, (bytes, complex, int, datetime)):
         return col
     elif isinstance(col, float):
         return int(col) if col.is_integer() else col
-    elif col in (None, "{}", "[]") or not col:
-        return None
     elif isinstance(col, str):
         return {"True": 1, "False": 0}.get(col, col)
     elif isinstance(col, (list, tuple, set, frozenset)):
         return list(map(str, map(parse_col, col)))
     elif isinstance(col, dict):
-        return dumps(col, separators=(",", ":"))
-    elif isinstance(col, datetime):
-        return col
+        return dumps(col, separators=(",", ":"), cls=BytesEncoder)
     else:
         raise NotImplementedError(type(col))
 
@@ -67,14 +73,14 @@ def psql_insert_copy(table, conn, keys, data_iter):
     data_iter : Iterable that iterates the values to be inserted
     """
 
-    with conn.connection.cursor() as cur:
-        table_name = psycopg2.sql.Identifier(
-            *(table.schema, table.name) if table.schema else (table.name,)
-        ).as_string(cur)
+    # with conn.connection.cursor() as cur:
+    #     table_name = psycopg2.sql.Identifier(
+    #         *(table.schema, table.name) if table.schema else (table.name,)
+    #     )#.as_string(cur)
 
-    mgr = CopyManager(
-        conn.connection, table_name, keys[1:] if keys and keys[0] == "index" else keys
-    )
+    columns = keys[1:] if keys and keys[0] == "index" else keys
+
+    mgr = CopyManager(conn.connection, table.name, columns)
     mgr.copy(map(lambda line: map(parse_col, line), data_iter))
     conn.connection.commit()
 

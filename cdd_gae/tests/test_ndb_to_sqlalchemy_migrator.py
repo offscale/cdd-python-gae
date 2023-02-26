@@ -60,6 +60,9 @@ class TestNDBToSqlalchemyMigrator(TestCase):
         )
 
     def test_ndb_sqlalchemy_migrator(self) -> None:
+        """
+        Test the `ndb_sqlalchemy_migrator`
+        """
         output_filename = os.path.join(
             self.empty_dir, "Person{extsep}py".format(extsep=extsep)
         )

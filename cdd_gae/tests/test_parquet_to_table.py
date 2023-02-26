@@ -41,6 +41,15 @@ metadata = MetaData()
 
 
 def construct_table(table_name):
+    """
+    Construct a new `Table` object
+
+    :param table_name: Name of table to construct
+    :type table_name: ```str```
+
+    :return: SQLalchemy Table
+    :rtype: ```Table```
+    """
     return Table(
         table_name,
         metadata,
@@ -59,6 +68,9 @@ def with_own_table(f):
     """
 
     def inner(*args, **kwargs):
+        """
+        Inner function that does the actual construction
+        """
         engine = create_engine(environ["RDBMS_URI"])
         table = construct_table(f.__name__)
         metadata.create_all(engine)
@@ -72,10 +84,12 @@ def with_own_table(f):
 
 
 def addapt_numpy_float64(numpy_float64):
+    """Adapt type for psycopg2 support"""
     return AsIs(numpy_float64)
 
 
 def addapt_numpy_int64(numpy_int64):
+    """Adapt type for psycopg2 support"""
     return AsIs(numpy_int64)
 
 
@@ -131,7 +145,7 @@ class TestParquetToTable(TestCase):
         table_name = inspect.stack()[0].function
 
         class Tbl:
-            """"""
+            """Tbl"""
 
         engine = create_engine(environ["RDBMS_URI"])
         mapper_registry = orm.registry()
