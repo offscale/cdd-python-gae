@@ -244,7 +244,20 @@ printf 'printf '"'"'To see if any jobs are left run:%s'"'"'%s'"'"'\n' \
 # Then run `bash 4_bq_to_parquet.bash`
 ```
 
-###  Download and parse the Parquet files, then insert into SQL
+###  Prepare instance; download and parse the Parquet files; then insert into SQL
+
+You may want to run the next commands on an instance in Google Cloud, and install deps:
+```sh
+sudo mkdir /data && sudo chown -R $USER:$GROUP "$_"
+sudo apt install -y python3-dev python3-venv libpq-dev moreutils git gcc
+python3 -m venv venv && venv/bin/activate
+python3 -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python/master/requirements.txt
+python3 -m pip install https://api.github.com/repos/offscale/cdd-python/zipball#egg=python-cdd
+python3 -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python-gae/master/requirements.txt
+python3 -m pip install https://api.github.com/repos/offscale/cdd-python-gae/zipball#egg=python-cdd-gae
+python3 -m pip install sqlalchemy==1.4.*
+```
+
 Download from Google Cloud Bucket to `/data`:
 ```sh
 gcloud storage cp -R 'gs://'"$GOOGLE_BUCKET_NAME"'/folder/*' '/data'
@@ -287,7 +300,7 @@ while read -r parquet_file; do
   py_file="$module_dir"'/'"$table_name"'.py'
   python -m cdd_gae gen --parse 'parquet' --emit 'sqlalchemy_table' -i "$parquet_file" -o "$py_file" --name "$table_name"
   echo -e 'from . import metadata' | cat - "$py_file" | sponge "$py_file"
-  printf -v table_import 'from %s.%s import config_tbl as %s' "$module_dir" "$table_name" "$table_name"
+  printf -v table_import 'from %s.%s import %s' "$module_dir" "$table_name" "$table_name"
   extra_imports+=("$table_import")
 done< <(find /data -type f -name '000000000000')
 
