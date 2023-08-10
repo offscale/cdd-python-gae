@@ -48,15 +48,16 @@ Traverse the AST for ndb and webapp2.
 
 ## Advantages
 
-  - 
+  - Automatic conversion from NDB to SQLalchemy
+  - Scripts to migrate the data
 
 ## Disadvantages
 
-  - 
+  - Doesn't handle the internal NDB functions
 
 ## Alternatives
 
-  - 
+  - Hand weave ;)
 
 ## Minor other use-cases this facilitates
 
