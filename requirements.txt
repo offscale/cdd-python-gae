@@ -7,5 +7,5 @@ pgcopy
 psycopg
 pyarrow
 pyyaml
-sqlalchemy
+sqlalchemy==1.4.*
 typing-extensions

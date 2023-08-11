@@ -61,7 +61,8 @@ Traverse the AST for ndb and webapp2.
 
 ## Minor other use-cases this facilitates
 
-  - 
+  - One could build this into a self-service migration system
+  - The intermediary layers are on BigQuery and Google Object Storage, both of which are useful in their own right
 
 ## CLI for this project
 
@@ -168,31 +169,98 @@ The most efficient way seems to be:
   2. Export from Google BigQuery to Apache Parquet files in Google Cloud Storage
   3. Download and parse the Parquet files, then insert into SQL
 
-(for the following scripts set `GOOGLE_PROJECT_ID`, `GOOGLE_BUCKET_NAME`, `NAMESPACE`, `GOOGLE_LOCATION`)
+(for the following scripts set `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_BUCKET`, `NAMESPACE`, `GOOGLE_LOCATION`)
 
 ### Backup from NDB to Google Cloud Storage
 ```sh
+set -euo pipefail
+
+entities_processed=0
+
+echo 'Exporting datastore to bucket: '"$GOOGLE_CLOUD_BUCKET"
 for entity in kind0 kind1; do
-  gcloud datastore export 'gs://'"$GOOGLE_BUCKET_NAME" --project "$GOOGLE_PROJECT_ID" --kinds "$entity" --async &
+  gcloud datastore export "$GOOGLE_CLOUD_BUCKET" --project "$GOOGLE_CLOUD_PROJECT" --kinds "$entity" --async
+  entities_processed=$((entities_processed + 1))
+  if [ "$entities_processed" -eq 18 ]; then
+    # Overcome quota issues
+    echo 'Sleeping for 2 minutes to overcome quota issues'
+    sleep 2m
+    entities_processed=0
+  fi
 done
+
+printf 'Tip: To see operations that are still being processed, run:\n%s\n' \
+       'gcloud datastore operations list --format=json | jq '"'"'map(select(.metadata.common.state == "PROCESSING"))'"'"
 ```
 
 ### Import from Google Cloud Storage to Google BigQuery
 ```sh
-printf 'bq mk "%s"\n' "$NAMESPACE" > migrate.bash
-gsutil ls 'gs://'"$GOOGLE_BUCKET_NAME"'/**/all_namespaces/kind_*' | python3 -c 'import sys, posixpath, fileinput; f=fileinput.input(encoding="utf-8"); d=dict(map(lambda e: (posixpath.basename(posixpath.dirname(e)), posixpath.dirname(e)), sorted(f))); f.close(); print("\n".join(map(lambda k: "( bq mk \"'"$NAMESPACE"'.{k}\" && bq --location='"$GOOGLE_LOCATION"' load --source_format=DATASTORE_BACKUP \"'"$NAMESPACE"'.{k}\" \"{v}/all_namespaces_{k}.export_metadata\" ) &".format(k=k, v=d[k]), sorted(d.keys()))),sep="");' >> migrate.bash
-# Then run `bash migrate.bash`
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+declare -r DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+while [[ $(gcloud datastore operations list --format=json | jq -re 'map(select(.metadata.common.state == "PROCESSING"))') != "[]" ]]; do
+   echo 'Waiting for operations to finish (sleeping for 5 minutes then trying again)'
+   sleep 5m
+done
+
+echo 'Generating script that imports datastore bucket to bq to: '"'""$DIR"'/2_bucket_to_bq.bash'"'"
+printf '#!/usr/bin/env bash\n\nbq mk "%s"\n' 'DatasetNameHere' > "$DIR"'/2_bucket_to_bq.bash'
+gsutil ls "$GOOGLE_CLOUD_BUCKET"'/**/all_namespaces/kind_*' | python3 -c 'import sys, posixpath, fileinput; f=fileinput.input(encoding="utf-8"); d=dict(map(lambda e: (posixpath.basename(posixpath.dirname(e)), posixpath.dirname(e)), sorted(f))); f.close(); print("\n".join(map(lambda k: "( bq mk \"Playable.{k}\" && bq --location=US load --source_format=DATASTORE_BACKUP \"DatasetNameHere.{k}\" \"{v}/all_namespaces_{k}.export_metadata\" ) &".format(k=k, v=d[k]), sorted(d.keys()))),sep="");' >> "$DIR"'/2_bucket_to_bq.bash'
+
+printf "To see if any jobs are left run:\nbq ls --jobs=true --format=json | jq 'map(select(.status.state != "'"DONE"))'"'"'\n' >> "$DIR"'/2_bucket_to_bq.bash'
+
+# Then run `bash 2_bucket_to_bq.bash`
 ```
 
 ### Export from Google BigQuery to Apache Parquet files in Google Cloud Storage
 ```sh
-for entity in kind0 kind1; do
-  bq extract --location="$GOOGLE_LOCATION" --destination_format='PARQUET' "$NAMESPACE"'.kind_'"$entity" 'gs://'"$GOOGLE_BUCKET_NAME"'/'"$entity"'/*' &
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+declare -r GOOGLE_CLOUD_REGION="${GOOGLE_CLOUD_REGION:-US}"
+declare -r DATE_ISO8601="$(date -u --iso-8601)"
+declare -r DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+while [[ $(bq ls --jobs=true --format=json | jq 'map(select(.status.state != "DONE"))') != "[]" ]]; do
+   echo 'Waiting for operations to finish (sleeping for 5 minutes then trying again)'
+   sleep 5m
 done
+
+echo 'Generating script that exports bq to datastore bucket in parquet format: '"'""$DIR"'/4_bq_to_parquet.bash'"'"
+
+printf '#!/usr/bin/env bash\n\n' > "$DIR"'/4_bq_to_parquet.bash'
+for entity in kind0 kind1; do
+  printf -v GOOGLE_CLOUD_BUCKET_PATH '%s/%s_0/%s/*' "$GOOGLE_CLOUD_BUCKET" "$DATE_ISO8601" "$entity"
+  printf "bq extract --location='%s' --destination_format='PARQUET' 'DatasetNameHere.kind_%s' '%s' &\n" \
+         "$GOOGLE_CLOUD_REGION" "$entity" "$GOOGLE_CLOUD_BUCKET_PATH" >> "$DIR"'/4_bq_to_parquet.bash'
+done
+
+printf 'printf '"'"'To see if any jobs are left run:%s'"'"'%s'"'"'\n' \
+       '\nbq ls --jobs=true --format=json | jq ' \
+       'map(select(.status.state != "DONE"))' >> "$DIR"'/4_bq_to_parquet.bash'
+
+# Then run `bash 4_bq_to_parquet.bash`
 ```
 
-###  Download and parse the Parquet files, then insert into SQL
-Download from Google Cloud Bucket:
+###  Prepare instance; download and parse the Parquet files; then insert into SQL
+
+You may want to run the next commands on an instance in Google Cloud, and install deps:
+```sh
+sudo mkdir /data && sudo chown -R $USER:$GROUP "$_"
+sudo apt install -y python3-dev python3-venv libpq-dev moreutils git gcc
+python3 -m venv venv && venv/bin/activate
+python3 -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python/master/requirements.txt
+python3 -m pip install https://api.github.com/repos/offscale/cdd-python/zipball#egg=python-cdd
+python3 -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python-gae/master/requirements.txt
+python3 -m pip install https://api.github.com/repos/offscale/cdd-python-gae/zipball#egg=python-cdd-gae
+python3 -m pip install sqlalchemy==1.4.*
+```
+
+Download from Google Cloud Bucket to `/data`:
 ```sh
 gcloud storage cp -R 'gs://'"$GOOGLE_BUCKET_NAME"'/folder/*' '/data'
 ```
@@ -234,7 +302,7 @@ while read -r parquet_file; do
   py_file="$module_dir"'/'"$table_name"'.py'
   python -m cdd_gae gen --parse 'parquet' --emit 'sqlalchemy_table' -i "$parquet_file" -o "$py_file" --name "$table_name"
   echo -e 'from . import metadata' | cat - "$py_file" | sponge "$py_file"
-  printf -v table_import 'from %s.%s import config_tbl as %s' "$module_dir" "$table_name" "$table_name"
+  printf -v table_import 'from %s.%s import %s' "$module_dir" "$table_name" "$table_name"
   extra_imports+=("$table_import")
 done< <(find /data -type f -name '000000000000')
 
@@ -256,7 +324,7 @@ printf '%s\n' \
 printf 'To create tables, run:\npython -m %s.create_tables\n' "$module_dir"
 ```
 
-Then run `python -m "$module_dir"` to execute the `CREATE TABLE`s.
+Then run `python -m "$module_dir".create_tables` to execute the `CREATE TABLE`s.
 
 Finally, to batch insert into your tables concurrently; replace `RDBMS_URI` with your database connection string:
 ```sh

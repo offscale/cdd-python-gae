@@ -53,7 +53,7 @@ class TestParseParquet(TestCase):
                             "n_legs",
                             {"typ": "int", "x_typ": {"sql": {"type": "BigInteger"}}},
                         ),
-                        ("animal", {"typ": "string"}),
+                        ("animal", {"typ": "str"}),
                     )
                 ),
                 "returns": None,
