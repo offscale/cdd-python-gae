@@ -169,7 +169,13 @@ The most efficient way seems to be:
   2. Export from Google BigQuery to Apache Parquet files in Google Cloud Storage
   3. Download and parse the Parquet files, then insert into SQL
 
-(for the following scripts set `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_BUCKET`, `NAMESPACE`, `GOOGLE_LOCATION`)
+For the following scripts set these `export`s:
+  - `DNS_NAME`
+  - `GOOGLE_BUCKET_NAME`
+  - `GOOGLE_CLOUD_PROJECT`
+  - `GOOGLE_CLOUD_ZONE`
+  - `GOOGLE_PROJECT_NAME`
+  - `INSTANCE_NAME`
 
 ### Backup from NDB to Google Cloud Storage
 ```sh
@@ -250,98 +256,65 @@ printf 'printf '"'"'To see if any jobs are left run:%s%s%s%s\n' \
 ### Create node in Google Cloud
 
 ```sh
-gcloud compute instances create instance_name0 --project=project_name --zone=zone_name --machine-type=e2-standard-32 --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default --maintenance-policy=MIGRATE --provisioning-model=STANDARD --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance_name0,image=projects/debian-cloud/global/images/debian-11-bullseye-v20230629,mode=rw,size=10,type=projects/project_name/zones/zone_name/diskTypes/pd-balanced --create-disk=device-name=2_5_tb,mode=rw,name=disk-1,size=2500,type=projects/project_name/zones/zone_name/diskTypes/pd-balanced --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --labels=goog-ec-src=vm_add-gcloud --reservation-affinity=an
+gcloud compute instances create "$INSTANCE_NAME" --project="$GOOGLE_CLOUD_PROJECT" --zone="$GOOGLE_CLOUD_ZONE" --machine-type=e2-standard-32 --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default --maintenance-policy=MIGRATE --provisioning-model=STANDARD --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=$INSTANCE_NAME,image=projects/debian-cloud/global/images/debian-11-bullseye-v20230629,mode=rw,size=10,type=projects/$GOOGLE_PROJECT_NAME/zones/$GOOGLE_ZONE_NAME/diskTypes/pd-balanced --create-disk=device-name=2_5_tb,mode=rw,name=disk-1,size=2500,type=projects/$GOOGLE_PROJECT_NAME/zones/$GOOGLE_CLOUD_ZONE/diskTypes/pd-balanced --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --labels=goog-ec-src=vm_add-gcloud --reservation-affinity=an
 ```
 
 ### Prepare instance
 
 ```sh
-gcloud compute ssh instance_name0 --command='sudo mkdir /data && sudo mkfs -t ext4 /dev/sdb && sudo mount "$_" "/data" && sudo chown -R $USER:$GROUP "$_" && sudo apt install -y python3-dev python3-venv libpq-dev moreutils git pwgen rsync gcc && python3 -m venv venv && . venv/bin/activate && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python/zipball#egg=python-cdd && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python-gae/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python-gae/zipball#egg=python-cdd-gae && python -m pip install sqlalchemy==1.4.*'
+gcloud compute ssh "$INSTANCE_NAME" --command='sudo mkdir /data && sudo mkfs -t ext4 /dev/sdb && sudo mount "$_" "/data" && sudo chown -R $USER:$GROUP "$_" && sudo apt install -y python3-dev python3-venv libpq-dev moreutils git pwgen rsync gcc && python3 -m venv venv && . venv/bin/activate && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python/zipball#egg=python-cdd && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python-gae/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python-gae/zipball#egg=python-cdd-gae && python -m pip install sqlalchemy==1.4.*'
 ```
 
 ### Download Parquet files
 
 ```sh
-gcloud compute ssh instance_name0 --command="gcloud storage cp -R 'gs://GOOGLE_CLOUD_BUCKET/2023-07-24_0/*' '/data'"
+# PS: This last bucket location can be found above as the `export`: `GOOGLE_CLOUD_BUCKET_PATH`
+$ gcloud compute ssh $INSTANCE_NAME --command="gcloud storage cp -R 'gs://""$GOOGLE_BUCKET_NAME"'/2023-07-24_0/*' '/data'"
 ```
 
-[Escaped] Download from Google Cloud Bucket to `/data`:
+### Install and serve PostgreSQL
+
 ```sh
-gcloud storage cp -R 'gs://'"$GOOGLE_BUCKET_NAME"'/folder/*' '/data'
+gcloud compute ssh $INSTANCE_NAME --command='f="postgres-version-manager-go_Linux_x86_64.tar.gz"; curl -OL https://github.com/offscale/postgres-version-manager-go/releases/0.0.21/"$f" && tar xf "$f" && ./pvm-go --data-path /data/pg-data --username "$(pwgen -n1)" --password "$(pwgen -n1)" --database database_name_db --locale C.UTF-8 start && ./pvm-go stop && sudo adduser -gecos "" --disabled-password --quiet postgres && sudo chown -R $_:$_ /data/pg-data && sudo ./pvm-go -c ~/postgres-version-manager/pvm-config.json install-service systemd && sudo systemctl daemon-reload && sudo systemctl start postgresql'
+
+# You might want to edit your "$($HOME/pvm-go get-path data)"'/pg_hba.conf' to enable connection to your db
+# Or you can do:
+
+$ export $($HOME/pvm-go env | xargs -L 1)
+
+$ printf 'host\t'"$POSTGRES_DATABASE"'\t'"$POSTGRES_USERNAME"'\t0.0.0.0/0\tscram-sha-256\n' >> "$($HOME/pvm-go get-path data)"'/pg_hba.conf'
+
+# You might also change your "$($HOME/pvm-go get-path data)"'/postgresql.conf' to enable connection to the correct address (or insecurely: listen_addresses = '*')
+
+$ printf 'listen_addresses = '"'"'*'"'"'\n' >> "$($HOME/pvm-go get-path data)"'/postgresql.conf'
+
+# Database connection string, take the output from that last command and replace "localhost" with:
+$ declare -r IP_ADDR="$(gcloud compute instances describe "$INSTANCE_NAME" --flatten networkInterfaces[].accessConfigs[] --format 'csv[no-heading](networkInterfaces.accessConfigs.natIP)')"
+
+# Go one step further and set a DNS name so it's easier, and so we can turn off/move the instance without worrying about a permanent IP, and for clustering
+$ gcloud beta dns record-sets create "$DNS_NAME" --rrdatas="$IP_ADDR" --type=A --zone="$GOOGLE_ZONE"
 ```
 
-Use this script to create SQLalchemy files from Parquet files:
-```bash
-#!/usr/bin/env bash
+### Create the tables
 
-set -euo pipefail
-
-if ! command -v sponge &>/dev/null; then
-  >&2 printf 'sponge not found, you need to:\nsudo apt install moreutils\n'
-  exit 2
-fi
-
-declare -r module_dir='parquet_to_postgres'
-mkdir -p "$module_dir"
-declare -r main_py="$module_dir"'/__main__.py'
-printf '%s\n' \
-	  'from os import environ' \
-	  'from sqlalchemy import create_engine' '' '' \
-	  'if __name__ == "__main__":' \
-	  '     ' \
-	  '    print("Creating tables")' \
-	  '    metadata.create_all(engine)' > "$main_py"
-printf '%s\n' \
-	  'from sqlalchemy import MetaData' '' \
-	  'metadata = MetaData()' \
-	  '__all__ = ["metadata"]' > "$module_dir"'/__init__.py'
-
-declare -a extra_imports=()
-
-while read -r parquet_file; do
-  IFS='_'; read -r _ _ table_name _ _ _ <<< "${parquet_file//+(*\/|.*)}"
-  if [ -z "$table_name" ]; then
-	parent_dir="${parquet_file%/*}"
-	table_name="${parent_dir##*/}"
-  fi
-  py_file="$module_dir"'/'"$table_name"'.py'
-  python -m cdd_gae gen --parse 'parquet' --emit 'sqlalchemy_table' -i "$parquet_file" -o "$py_file" --name "$table_name"
-  echo -e 'from . import metadata' | cat - "$py_file" | sponge "$py_file"
-  printf -v table_import 'from %s.%s import %s' "$module_dir" "$table_name" "$table_name"
-  extra_imports+=("$table_import")
-done< <(find /data -type f -name '000000000000')
-
-extra_imports+=('from . import metadata')
-
-( IFS=$'\n'; echo -e "${extra_imports[*]}" ) | cat - "$main_py" | sponge "$main_py"
-
-# create_tables script
-create_tables_py="$module_dir"'/create_tables.py'
-printf '%s\n' \
-	  'from os import environ' \
-	  'from sqlalchemy import create_engine' '' '' \
-	  'if __name__ == "__main__":' \
-	  '    engine = create_engine(environ["RDBMS_URI"])' \
-	  '    print("Creating tables")' \
-	  '    metadata.create_all(engine)' > "$create_tables_py"
-( IFS=$'\n'; echo -e "${extra_imports[*]}" ) | cat - "$create_tables_py" | sponge "$create_tables_py"
-
-printf 'To create tables, run:\npython -m %s.create_tables\n' "$module_dir"
-```
-
-Then run `python -m "$module_dir".create_tables` to execute the `CREATE TABLE`s.
-
-Finally, to batch insert into your tables concurrently; replace `RDBMS_URI` with your database connection string:
 ```sh
-export RDBMS_URI='postgresql://username:password@host/database'
-for parquet_file in 2023-01-18_0_kind0_000000000000 2023-01-18_0_kind1_000000000000; do
-  python -m cdd_gae parquet2table -i "$parquet_file" &
-done
-# Or with the concurrent `fd`
-# fd -tf . '/data' -E 'exclude_tbl' -x python -m cdd_gae parquet2table -i
-# Or with explicit table_name from parent folder's basename:
-# fd -tf . '/data' -E 'exclude_tbl' -x bash -c 'python -m cdd_gae parquet2table --table-name "$(basename ${0%/*})" -i "$0"' {}
+# `gcloud compute scp` over '5_gen_parquet_to_sqlalchemy.bash' then run:
+$ gcloud compute ssh "$INSTANCE_NAME" --command='bash 5_gen_parquet_to_sqlalchemy.bash && export RDBMS_URI="$($HOME/pvm-go uri)" && ~/venv/bin/python -m parquet_to_postgres.create_tables'
+````
+
+### Import data from Parquet to PostgreSQL
+
+```sh
+$ fd -tf . '/data' -E 'exclude_tbl' -x bash -c 'python -m cdd_gae parquet2table --table-name "$(basename ${0%/*})" -i "$0"' {}
 ```
+
+### Note connection string
+
+```sh
+$ gcloud compute ssh "$INSTANCE_NAME" --command='./pvm-go uri'
+```
+
+(replace `localhost` with the `$IP_ADDR` value or `$DNS_NAME` if you set that)
 
 ---
 
