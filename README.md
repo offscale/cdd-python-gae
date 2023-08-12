@@ -178,7 +178,7 @@ set -euo pipefail
 entities_processed=0
 
 echo 'Exporting datastore to bucket: '"$GOOGLE_CLOUD_BUCKET"
-for entity in kind0 kind1; do
+for entity in kind0 kind1 kind2; do
   gcloud datastore export "$GOOGLE_CLOUD_BUCKET" --project "$GOOGLE_CLOUD_PROJECT" --kinds "$entity" --async
   entities_processed=$((entities_processed + 1))
   if [ "$entities_processed" -eq 18 ]; then
@@ -207,10 +207,12 @@ while [[ $(gcloud datastore operations list --format=json | jq -re 'map(select(.
 done
 
 echo 'Generating script that imports datastore bucket to bq to: '"'""$DIR"'/2_bucket_to_bq.bash'"'"
-printf '#!/usr/bin/env bash\n\nbq mk "%s"\n' 'DatasetNameHere' > "$DIR"'/2_bucket_to_bq.bash'
-gsutil ls "$GOOGLE_CLOUD_BUCKET"'/**/all_namespaces/kind_*' | python3 -c 'import sys, posixpath, fileinput; f=fileinput.input(encoding="utf-8"); d=dict(map(lambda e: (posixpath.basename(posixpath.dirname(e)), posixpath.dirname(e)), sorted(f))); f.close(); print("\n".join(map(lambda k: "( bq mk \"Playable.{k}\" && bq --location=US load --source_format=DATASTORE_BACKUP \"DatasetNameHere.{k}\" \"{v}/all_namespaces_{k}.export_metadata\" ) &".format(k=k, v=d[k]), sorted(d.keys()))),sep="");' >> "$DIR"'/2_bucket_to_bq.bash'
+printf '#!/usr/bin/env bash\n\nbq mk "%s"\n' 'CollectionName' > "$DIR"'/2_bucket_to_bq.bash'
+gsutil ls "$GOOGLE_CLOUD_BUCKET"'/**/all_namespaces/kind_*' | python3 -c 'import sys, posixpath, fileinput; f=fileinput.input(encoding="utf-8"); d=dict(map(lambda e: (posixpath.basename(posixpath.dirname(e)), posixpath.dirname(e)), sorted(f))); f.close(); print("\n".join(map(lambda k: "( bq mk \"CollectionName.{k}\" && bq --location=US load --source_format=DATASTORE_BACKUP \"CollectionName.{k}\" \"{v}/all_namespaces_{k}.export_metadata\" ) &".format(k=k, v=d[k]), sorted(d.keys()))),sep="");' >> "$DIR"'/2_bucket_to_bq.bash'
 
-printf "To see if any jobs are left run:\nbq ls --jobs=true --format=json | jq 'map(select(.status.state != "'"DONE"))'"'"'\n' >> "$DIR"'/2_bucket_to_bq.bash'
+printf 'printf '"'"'To see if any jobs are left run:%s%s%s%s\n' \
+       '\nbq ls --jobs=true --format=json | jq ' "'\"'\"'" \
+       'map(select(.status.state != "DONE"))' "'\"'\"'\n'" >> "$DIR"'/2_bucket_to_bq.bash'
 
 # Then run `bash 2_bucket_to_bq.bash`
 ```
@@ -221,7 +223,6 @@ printf "To see if any jobs are left run:\nbq ls --jobs=true --format=json | jq '
 
 set -euo pipefail
 
-declare -r GOOGLE_CLOUD_REGION="${GOOGLE_CLOUD_REGION:-US}"
 declare -r DATE_ISO8601="$(date -u --iso-8601)"
 declare -r DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -233,34 +234,38 @@ done
 echo 'Generating script that exports bq to datastore bucket in parquet format: '"'""$DIR"'/4_bq_to_parquet.bash'"'"
 
 printf '#!/usr/bin/env bash\n\n' > "$DIR"'/4_bq_to_parquet.bash'
-for entity in kind0 kind1; do
+for entity in kind0 kind1 kind2; do
   printf -v GOOGLE_CLOUD_BUCKET_PATH '%s/%s_0/%s/*' "$GOOGLE_CLOUD_BUCKET" "$DATE_ISO8601" "$entity"
-  printf "bq extract --location='%s' --destination_format='PARQUET' 'DatasetNameHere.kind_%s' '%s' &\n" \
+  printf "bq extract --location='%s' --destination_format='PARQUET' 'CollectionName.kind_%s' '%s' &\n" \
          "$GOOGLE_CLOUD_REGION" "$entity" "$GOOGLE_CLOUD_BUCKET_PATH" >> "$DIR"'/4_bq_to_parquet.bash'
 done
 
-printf 'printf '"'"'To see if any jobs are left run:%s'"'"'%s'"'"'\n' \
-       '\nbq ls --jobs=true --format=json | jq ' \
-       'map(select(.status.state != "DONE"))' >> "$DIR"'/4_bq_to_parquet.bash'
+printf 'printf '"'"'To see if any jobs are left run:%s%s%s%s\n' \
+       '\nbq ls --jobs=true --format=json | jq ' "'\"'\"'" \
+       'map(select(.status.state != "DONE"))' "'\"'\"'\n'" >> "$DIR"'/4_bq_to_parquet.bash'
 
 # Then run `bash 4_bq_to_parquet.bash`
 ```
 
-###  Prepare instance; download and parse the Parquet files; then insert into SQL
+### Create node in Google Cloud
 
-You may want to run the next commands on an instance in Google Cloud, and install deps:
 ```sh
-sudo mkdir /data && sudo chown -R $USER:$GROUP "$_"
-sudo apt install -y python3-dev python3-venv libpq-dev moreutils git gcc
-python3 -m venv venv && venv/bin/activate
-python3 -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python/master/requirements.txt
-python3 -m pip install https://api.github.com/repos/offscale/cdd-python/zipball#egg=python-cdd
-python3 -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python-gae/master/requirements.txt
-python3 -m pip install https://api.github.com/repos/offscale/cdd-python-gae/zipball#egg=python-cdd-gae
-python3 -m pip install sqlalchemy==1.4.*
+gcloud compute instances create instance_name0 --project=project_name --zone=zone_name --machine-type=e2-standard-32 --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default --maintenance-policy=MIGRATE --provisioning-model=STANDARD --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=instance_name0,image=projects/debian-cloud/global/images/debian-11-bullseye-v20230629,mode=rw,size=10,type=projects/project_name/zones/zone_name/diskTypes/pd-balanced --create-disk=device-name=2_5_tb,mode=rw,name=disk-1,size=2500,type=projects/project_name/zones/zone_name/diskTypes/pd-balanced --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --labels=goog-ec-src=vm_add-gcloud --reservation-affinity=an
 ```
 
-Download from Google Cloud Bucket to `/data`:
+### Prepare instance
+
+```sh
+gcloud compute ssh instance_name0 --command='sudo mkdir /data && sudo mkfs -t ext4 /dev/sdb && sudo mount "$_" "/data" && sudo chown -R $USER:$GROUP "$_" && sudo apt install -y python3-dev python3-venv libpq-dev moreutils git pwgen rsync gcc && python3 -m venv venv && . venv/bin/activate && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python/zipball#egg=python-cdd && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python-gae/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python-gae/zipball#egg=python-cdd-gae && python -m pip install sqlalchemy==1.4.*'
+```
+
+### Download Parquet files
+
+```sh
+gcloud compute ssh instance_name0 --command="gcloud storage cp -R 'gs://GOOGLE_CLOUD_BUCKET/2023-07-24_0/*' '/data'"
+```
+
+[Escaped] Download from Google Cloud Bucket to `/data`:
 ```sh
 gcloud storage cp -R 'gs://'"$GOOGLE_BUCKET_NAME"'/folder/*' '/data'
 ```
