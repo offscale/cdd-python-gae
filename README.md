@@ -304,6 +304,8 @@ $ gcloud compute ssh "$INSTANCE_NAME" --command='bash 5_gen_parquet_to_sqlalchem
 
 ### Import data from Parquet to PostgreSQL
 
+After installing [`fd`](https://github.com/sharkdp/fd) for concurrency, run:
+
 ```sh
 $ fd -tf . '/data' -E 'exclude_tbl' -x bash -c 'python -m cdd_gae parquet2table --table-name "$(basename ${0%/*})" -i "$0"' {}
 ```
