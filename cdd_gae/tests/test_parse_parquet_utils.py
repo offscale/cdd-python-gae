@@ -58,7 +58,7 @@ class TestParseParquetUtils(TestCase):
             cdd_gae.parse.parquet_utils.parquet_type_to_param(
                 pa.field("id", pa.string())
             ),
-            {"typ": "string"},
+            {"typ": "str"},
         )
         self.assertDictEqual(
             cdd_gae.parse.parquet_utils.parquet_type_to_param(
