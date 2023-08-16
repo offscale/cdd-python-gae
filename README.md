@@ -167,7 +167,8 @@ The most efficient way seems to be:
   0. Backup from NDB to Google Cloud Storage
   1. Import from Google Cloud Storage to Google BigQuery
   2. Export from Google BigQuery to Apache Parquet files in Google Cloud Storage
-  3. Download and parse the Parquet files, then insert into SQL
+  3. Download and parse these Parquet files
+  4. Use binary protocol to bulk insert into PostgreSQL
 
 For the following scripts set these `export`s:
   - `DNS_NAME`
@@ -177,7 +178,7 @@ For the following scripts set these `export`s:
   - `GOOGLE_PROJECT_NAME`
   - `INSTANCE_NAME`
 
-### Backup from NDB to Google Cloud Storage
+### 0. Backup from NDB to Google Cloud Storage
 ```sh
 set -euo pipefail
 
@@ -199,7 +200,7 @@ printf 'Tip: To see operations that are still being processed, run:\n%s\n' \
        'gcloud datastore operations list --format=json | jq '"'"'map(select(.metadata.common.state == "PROCESSING"))'"'"
 ```
 
-### Import from Google Cloud Storage to Google BigQuery
+### 1. Import from Google Cloud Storage to Google BigQuery
 ```sh
 #!/usr/bin/env bash
 
@@ -223,7 +224,7 @@ printf 'printf '"'"'To see if any jobs are left run:%s%s%s%s\n' \
 # Then run `bash 2_bucket_to_bq.bash`
 ```
 
-### Export from Google BigQuery to Apache Parquet files in Google Cloud Storage
+### 2. Export from Google BigQuery to Apache Parquet files in Google Cloud Storage
 ```sh
 #!/usr/bin/env bash
 
@@ -253,36 +254,36 @@ printf 'printf '"'"'To see if any jobs are left run:%s%s%s%s\n' \
 # Then run `bash 4_bq_to_parquet.bash`
 ```
 
-### Create node in Google Cloud
+### 3. Create node in Google Cloud
 
 ```sh
 gcloud compute instances create "$INSTANCE_NAME" --project="$GOOGLE_CLOUD_PROJECT" --zone="$GOOGLE_CLOUD_ZONE" --machine-type=e2-standard-32 --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default --maintenance-policy=MIGRATE --provisioning-model=STANDARD --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --tags=http-server,https-server --create-disk=auto-delete=yes,boot=yes,device-name=$INSTANCE_NAME,image=projects/debian-cloud/global/images/debian-11-bullseye-v20230629,mode=rw,size=10,type=projects/$GOOGLE_PROJECT_NAME/zones/$GOOGLE_ZONE_NAME/diskTypes/pd-balanced --create-disk=device-name=2_5_tb,mode=rw,name=disk-1,size=2500,type=projects/$GOOGLE_PROJECT_NAME/zones/$GOOGLE_CLOUD_ZONE/diskTypes/pd-balanced --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --labels=goog-ec-src=vm_add-gcloud --reservation-affinity=an
 ```
 
-### Prepare instance
+### 4. Prepare instance
 
 ```sh
-gcloud compute ssh "$INSTANCE_NAME" --command='sudo mkdir /data && sudo mkfs -t ext4 /dev/sdb && sudo mount "$_" "/data" && sudo chown -R $USER:$GROUP "$_" && sudo apt install -y python3-dev python3-venv libpq-dev moreutils git pwgen rsync gcc && python3 -m venv venv && . venv/bin/activate && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python/zipball#egg=python-cdd && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python-gae/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python-gae/zipball#egg=python-cdd-gae && python -m pip install sqlalchemy==1.4.*'
+gcloud compute ssh "$INSTANCE_NAME" --command='sudo mkdir /data && sudo mkfs -t ext4 /dev/sdb && sudo mount "$_" "/data" && sudo chown -R $USER:$GROUP "$_" && sudo apt install -y python3-dev python3-venv libpq-dev moreutils git pwgen rsync gcc && python3 -m venv venv && . venv/bin/activate && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python/zipball#egg=python-cdd && python -m pip install -r https://raw.githubusercontent.com/offscale/cdd-python-gae/master/requirements.txt && python -m pip install https://api.github.com/repos/offscale/cdd-python-gae/zipball#egg=python-cdd-gae'
 ```
 
-### Download Parquet files
+### 5. Download Parquet files
 
 ```sh
 # PS: This last bucket location can be found above as the `export`: `GOOGLE_CLOUD_BUCKET_PATH`
-$ gcloud compute ssh $INSTANCE_NAME --command="gcloud storage cp -R 'gs://""$GOOGLE_BUCKET_NAME"'/2023-07-24_0/*' '/data'"
+$ gcloud compute ssh "$INSTANCE_NAME" --command="gcloud storage cp -R 'gs://""$GOOGLE_BUCKET_NAME"'/2023-07-24_0/*' '/data'"
 ```
 
-### Install and serve PostgreSQL
+### 6. Install and serve PostgreSQL
 
 ```sh
-gcloud compute ssh $INSTANCE_NAME --command='f="postgres-version-manager-go_Linux_x86_64.tar.gz"; curl -OL https://github.com/offscale/postgres-version-manager-go/releases/0.0.21/"$f" && tar xf "$f" && ./pvm-go --data-path /data/pg-data --username "$(pwgen -n1)" --password "$(pwgen -n1)" --database database_name_db --locale C.UTF-8 start && ./pvm-go stop && sudo adduser -gecos "" --disabled-password --quiet postgres && sudo chown -R $_:$_ /data/pg-data && sudo ./pvm-go -c ~/postgres-version-manager/pvm-config.json install-service systemd && sudo systemctl daemon-reload && sudo systemctl start postgresql'
+gcloud compute ssh "$INSTANCE_NAME" --command='f="postgres-version-manager-go_Linux_x86_64.tar.gz"; curl -OL https://github.com/offscale/postgres-version-manager-go/releases/0.0.21/"$f" && tar xf "$f" && ./pvm-go --data-path /data/pg-data --username "$(pwgen -n1)" --password "$(pwgen -n1)" --database database_name_db --locale C.UTF-8 start && ./pvm-go stop && sudo adduser -gecos "" --disabled-password --quiet postgres && sudo chown -R $_:$_ /data/pg-data && sudo ./pvm-go -c ~/postgres-version-manager/pvm-config.json install-service systemd && sudo systemctl daemon-reload && sudo systemctl start postgresql'
 
 # You might want to edit your "$($HOME/pvm-go get-path data)"'/pg_hba.conf' to enable connection to your db
 # Or you can do:
 
 $ export $($HOME/pvm-go env | xargs -L 1)
 
-$ printf 'host\t'"$POSTGRES_DATABASE"'\t'"$POSTGRES_USERNAME"'\t0.0.0.0/0\tscram-sha-256\n' >> "$($HOME/pvm-go get-path data)"'/pg_hba.conf'
+$ printf 'host\t%s\t%s\t0.0.0.0/0\tscram-sha-256\n' "$POSTGRES_DATABASE" "$POSTGRES_USERNAME" >> "$($HOME/pvm-go get-path data)"'/pg_hba.conf'
 
 # You might also change your "$($HOME/pvm-go get-path data)"'/postgresql.conf' to enable connection to the correct address (or insecurely: listen_addresses = '*')
 
@@ -295,14 +296,14 @@ $ declare -r IP_ADDR="$(gcloud compute instances describe "$INSTANCE_NAME" --fla
 $ gcloud beta dns record-sets create "$DNS_NAME" --rrdatas="$IP_ADDR" --type=A --zone="$GOOGLE_ZONE"
 ```
 
-### Create the tables
+### 7. Create the tables
 
 ```sh
 # `gcloud compute scp` over '5_gen_parquet_to_sqlalchemy.bash' then run:
 $ gcloud compute ssh "$INSTANCE_NAME" --command='bash 5_gen_parquet_to_sqlalchemy.bash && export RDBMS_URI="$($HOME/pvm-go uri)" && ~/venv/bin/python -m parquet_to_postgres.create_tables'
 ````
 
-### Import data from Parquet to PostgreSQL
+### 8. Import data from Parquet to PostgreSQL
 
 After installing [`fd`](https://github.com/sharkdp/fd) for concurrency, run:
 
@@ -316,7 +317,7 @@ $ fd -tf . '/data' -E 'exclude_tbl' -x bash -c 'python -m cdd_gae parquet2table 
 $ gcloud compute ssh "$INSTANCE_NAME" --command='./pvm-go uri'
 ```
 
-(replace `localhost` with the `$IP_ADDR` value or `$DNS_NAME` if you set that)
+(replace `localhost` with the `$IP_ADDR` value, or `$DNS_NAME` if you set that)
 
 ---
 
