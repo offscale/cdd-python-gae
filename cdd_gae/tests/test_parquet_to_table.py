@@ -7,6 +7,7 @@ import unittest
 from collections import namedtuple
 from copy import deepcopy
 from datetime import datetime
+from functools import partial
 from itertools import repeat
 from os import environ, path
 from tempfile import TemporaryDirectory
@@ -117,18 +118,71 @@ class TestParquetToTable(TestCase):
     #     )
     # )
 
-    copy_to_stdout_mock = (
-        '2023-02-18 12:14:43.592777-05	{"can": "haz"}	{Flamingo,Centipede}	{0,1,2,3,4,5}	{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}	1'
-        '2023-02-18 12:14:43.592777-05	{"can": "haz"}	{Flamingo,Centipede}	{0,1,2,3,4,5}	{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}	2'
-        '2023-02-18 12:14:43.592777-05	{"can": "haz"}	{Flamingo,Centipede}	{0,1,2,3,4,5}	{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}	3'
+    copy_to_stdout_mock = "".join(
+        map(
+            partial(str.join, "\t"),
+            (
+                (
+                    "2023-02-18 12:14:43.592777-05",
+                    '{"can": "haz"}',
+                    "{Flamingo,Centipede}",
+                    "{0,1,2,3,4,5}",
+                    '{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}',
+                    "1",
+                ),
+                (
+                    "2023-02-18 12:14:43.592777-05"
+                    '{"can": "haz"}'
+                    "{Flamingo,Centipede}"
+                    "{0,1,2,3,4,5}"
+                    '{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}',
+                    "2",
+                ),
+                (
+                    "2023-02-18 12:14:43.592777-05",
+                    '{"can": "haz"}',
+                    "{Flamingo,Centipede}",
+                    "{0,1,2,3,4,5}",
+                    '{"{\\"foo\\": \\"bar\\"}","{\\"can\\": \\"haz\\"}"}',
+                    "3",
+                ),
+            ),
+        )
     )
     # psql: `COPY test_sqlalchemy_csv TO STDOUT;`
 
-    to_csv_mock = (
-        "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	1\n"
-        "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	2\n"
-        "2023-02-18 17:14:43.592777+00:00	{'can': 'haz'}	['Flamingo', 'Centipede']	[0, 1, 2, 3, 4, 5]	[{'foo': 'bar'}, {'can': 'haz'}]	3\n"
+    to_csv_mock = "\n".join(
+        map(
+            partial(str.join, "\t"),
+            (
+                (
+                    "2023-02-18 17:14:43.592777+00:00",
+                    "{'can': 'haz'}",
+                    "['Flamingo', 'Centipede']",
+                    "[0, 1, 2, 3, 4, 5]",
+                    "[{'foo': 'bar'}, {'can': 'haz'}]",
+                    "1",
+                ),
+                (
+                    "2023-02-18 17:14:43.592777+00:00",
+                    "{'can': 'haz'}",
+                    "['Flamingo', 'Centipede']",
+                    "[0, 1, 2, 3, 4, 5]",
+                    "[{'foo': 'bar'}, {'can': 'haz'}]",
+                    "2",
+                ),
+                (
+                    "2023-02-18 17:14:43.592777+00:00",
+                    "{'can': 'haz'}",
+                    "['Flamingo', 'Centipede']",
+                    "[0, 1, 2, 3, 4, 5]",
+                    "[{'foo': 'bar'}, {'can': 'haz'}]",
+                    "3",
+                ),
+            ),
+        )
     )  # python: `pd.read_sql_query("SELECT * FROM").to_csv`
+    print("copy_to_stdout_mock:", copy_to_stdout_mock)
 
     def test_parse_col(self):
         """
