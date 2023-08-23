@@ -10,6 +10,7 @@ from datetime import datetime
 from functools import partial
 from itertools import repeat
 from os import environ, path
+from sys import stderr
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 
@@ -182,7 +183,6 @@ class TestParquetToTable(TestCase):
             ),
         )
     )  # python: `pd.read_sql_query("SELECT * FROM").to_csv`
-    print("copy_to_stdout_mock:", copy_to_stdout_mock)
 
     def test_parse_col(self):
         """
@@ -211,7 +211,7 @@ class TestParquetToTable(TestCase):
 
         try:
             with Session(engine) as session:
-                self.assertEqual(Query([Tbl], session=session).count(), 0)
+                init_count = Query([Tbl], session=session).count()
                 session.add_all(
                     map(
                         deepcopy,
@@ -228,9 +228,11 @@ class TestParquetToTable(TestCase):
                     )
                 )
                 session.commit()
-                self.assertEqual(Query([Tbl], session=session).count(), 3)
+                self.assertEqual(Query([Tbl], session=session).count(), init_count + 3)
                 df = pd.read_sql_query("SELECT * FROM {}".format(table_name), engine)
                 # session.execute("TRUNCATE {}".format(table_name))
+
+                print(pa.Table.from_pandas(df).schema, file=stderr)
 
                 results = df.to_csv(index=False, sep="\t", header=False)
                 self.assertEqual(
@@ -258,16 +260,51 @@ class TestParquetToTable(TestCase):
         """
         Tests complex rows are inserted into table using parquet_to_table
         """
-        row = pa.table(
-            pd.DataFrame(
+        schema = pa.schema(
+            [
+                pa.field("timestamp_col", pa.timestamp("ns", tz="UTC")),
+                pa.field("json_col", pa.struct([("can", pa.string())])),
+                pa.field("array_str_col", pa.list_(pa.string())),
+                pa.field("array_bigint_col", pa.list_(pa.int64())),
+                pa.field(
+                    "array_json_col",
+                    pa.list_(pa.struct([("foo", pa.string()), ("can", pa.string())])),
+                ),
+            ]
+        )
+        print(schema)
+        row = pa.Table.from_pydict(
+            {
+                "timestamp_col": datetime.now().isoformat(),
+                "json_col": {"can": "haz"},
+                "array_str_col": ["Flamingo", "Centipede"],
+                "array_bigint_col": np.arange(6, dtype=np.int64),
+                "array_json_col": [{"foo": "bar"}, {"can": "haz"}],
+            },
+            schema=schema,
+        )
+        """
+        timestamp_col: timestamp[ns, tz=UTC]
+        json_col: struct<can: string>
+          child 0, can: string
+        array_str_col: list<item: string>
+          child 0, item: string
+        array_bigint_col: list<item: int64>
+          child 0, item: int64
+        array_json_col: list<item: struct<can: string, foo: string>>
+          child 0, item: struct<can: string, foo: string>
+        """
+        row = pa.Table.from_pandas(
+            pd.DataFrame.from_dict(
                 {
                     "timestamp_col": datetime.now().isoformat(),
                     "json_col": {"can": "haz"},
-                    "array_str_col": ["Flamingo", "Centipede"],
-                    "array_bigint_col": np.arange(6, dtype=np.int64),
-                    "array_json_col": [{"foo": "bar"}, {"can": "haz"}],
+                    "array_str_col": pd.Series(("Flamingo", "Centipede")),
+                    "array_bigint_col": np.arange(2, dtype=np.int64),
+                    "array_json_col": pd.Series(({"foo": "bar"}, {"can": "haz"})),
                 }
-            )
+            ),
+            schema=schema,
         )
         with TemporaryDirectory() as tempdir:
             parquet_filepath = path.join(tempdir, "foo.parquet")

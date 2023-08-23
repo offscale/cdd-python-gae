@@ -44,14 +44,12 @@ def parse_col(col):
         return parse_col(col.tolist()) if col.size > 0 else None
     elif isinstance(col, bool):
         return int(col)
-    elif col in (None, "{}", "[]") or not col:
-        return None
-    elif isinstance(col, (bytes, complex, int, datetime)):
+    elif isinstance(col, (bytes, complex, int, datetime, type(None))):
         return col
     elif isinstance(col, float):
         return int(col) if col.is_integer() else col
     elif isinstance(col, str):
-        return {"True": 1, "False": 0}.get(col, col)
+        return {"True": 1, "False": 0, "{}": None, "[]": None}.get(col, col)
     elif isinstance(col, (list, tuple, set, frozenset)):
         return list(map(str, map(parse_col, col)))
     elif isinstance(col, dict):

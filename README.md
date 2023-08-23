@@ -67,25 +67,24 @@ Traverse the AST for ndb and webapp2.
 ## CLI for this project
 
     $ python -m cdd_gae --help
-    usage: python -m cdd_gae gen [-h] [--parse {ndb,parquet,webapp2}] --emit
-                                 {argparse,class,function,json_schema,pydantic,sqlalchemy,sqlalchemy_table}
-                                 -i INPUT_FILE -o OUTPUT_FILE [--name NAME]
-                                 [--dry-run]
+    usage: python -m cdd_gae [-h] [--version]
+                             {gen,ndb2sqlalchemy_migrator,parquet2table} ...
+    
+    Migration tooling from Google App Engine (webapp2, ndb) to python-cdd
+    supported (FastAPI, SQLalchemy).
+    
+    positional arguments:
+      {gen,ndb2sqlalchemy_migrator,parquet2table}
+        gen                 Go from cdd_gae supported parse type to cdd supported
+                            emit type
+        ndb2sqlalchemy_migrator
+                            Create migration scripts from NDB to SQLalchemy
+        parquet2table       Go from Parquet file to Postgres table (with more
+                            efficient `COPY FROM`)
     
     options:
       -h, --help            show this help message and exit
-      --parse {ndb,parquet,webapp2}
-                            What type the input is.
-      --emit {argparse,class,function,json_schema,pydantic,sqlalchemy,sqlalchemy_table}
-                            What type to generate.
-      -i INPUT_FILE, --input-file INPUT_FILE
-                            Python file to parse NDB `class`es out of
-      -o OUTPUT_FILE, --output-file OUTPUT_FILE
-                            Empty file to generate SQLalchemy classes to
-      --name NAME           Name of function/class to emit, defaults to inferring
-                            from filename
-      --dry-run             Show what would be created; don't actually write to
-                            the filesystem.
+      --version             show program's version number and exit
 
 ### `python -m cdd_gae gen`
 
